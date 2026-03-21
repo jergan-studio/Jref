@@ -9,6 +9,7 @@ body {
   font-family: Arial;
   background: #e9e9e9;
   text-align: center;
+  transition: 0.3s;
 }
 
 .topbar {
@@ -23,27 +24,47 @@ input {
   width: 50%;
   background: #f2d6e0;
   text-align: center;
+  transition: 0.2s;
 }
 
+input:focus {
+  transform: scale(1.05);
+}
+
+/* Title animation */
 .title {
   font-size: 60px;
   margin-top: 100px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.6s forwards;
 }
 
-.buttons button {
+/* Buttons */
+.shortcuts {
+  margin-top: 20px;
+}
+
+.shortcuts button {
   margin: 10px;
   padding: 15px;
   background: #e6c3d3;
   border: none;
   border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-.result {
-  background: white;
-  margin: 10px auto;
-  padding: 10px;
-  width: 400px;
-  border-radius: 10px;
+.shortcuts button:hover {
+  transform: scale(1.1);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
 </head>
@@ -51,58 +72,55 @@ input {
 <body>
 
 <div class="topbar">
-  <input id="search" placeholder="search">
+  <input id="search" placeholder="Search Jref... (try: yt, gh)">
 </div>
 
 <div class="title">Jref</div>
 
-<div class="buttons">
-  <button onclick="quick('youtube')">YouTube</button>
-  <button onclick="quick('github')">GitHub</button>
+<div class="shortcuts">
+  <button onclick="go('youtube')">YouTube</button>
+  <button onclick="go('github')">GitHub</button>
+  <button onclick="go('google')">Google</button>
 </div>
-
-<div id="results"></div>
 
 <script src="data.js"></script>
 
 <script>
-function search(query) {
-  const results = database.filter(item =>
-    item.title.toLowerCase().includes(query.toLowerCase()) ||
-    item.description.toLowerCase().includes(query.toLowerCase())
-  );
+/* SHORTCUT SYSTEM */
+const shortcuts = {
+  yt: "https://youtube.com",
+  gh: "https://github.com",
+  g: "https://google.com"
+};
 
-  const box = document.getElementById("results");
-  box.innerHTML = "";
-
-  if (results.length === 0) {
-    box.innerHTML = "<p>No results. Searching web...</p>";
-
-    setTimeout(() => {
-      window.location.href =
-        "https://www.google.com/search?q=" + encodeURIComponent(query);
-    }, 800);
-    return;
-  }
-
-  results.forEach(r => {
-    box.innerHTML += `
-      <div class="result">
-        <a href="${r.url}" target="_blank">${r.title}</a>
-        <p>${r.description}</p>
-      </div>
-    `;
-  });
+function go(name) {
+  window.open("https://" + name + ".com", "_blank");
 }
 
+/* SEARCH */
 document.getElementById("search").addEventListener("keydown", e => {
-  if (e.key === "Enter") search(e.target.value);
+  if (e.key === "Enter") {
+    const query = e.target.value;
+
+    /* shortcut check */
+    if (shortcuts[query]) {
+      window.location.href = shortcuts[query];
+      return;
+    }
+
+    /* go to results page */
+    window.location.href = "results.html?q=" + encodeURIComponent(query);
+  }
 });
 
-function quick(q) {
-  search(q);
-}
+/* "/" focus shortcut */
+document.addEventListener("keydown", e => {
+  if (e.key === "/") {
+    e.preventDefault();
+    document.getElementById("search").focus();
+  }
+});
 </script>
 
 </body>
-</html>
+</html> 
