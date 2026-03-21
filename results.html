@@ -1,1 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Results - Jref</title>
 
+<style>
+body {
+  font-family: Arial;
+  background: #e9e9e9;
+  padding: 20px;
+}
+
+.result {
+  background: white;
+  margin: 10px 0;
+  padding: 15px;
+  border-radius: 10px;
+  animation: fadeIn 0.3s ease;
+}
+
+a {
+  font-size: 20px;
+  text-decoration: none;
+  color: black;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+
+<body>
+
+<h2 id="title"></h2>
+<div id="results"></div>
+
+<script src="data.js"></script>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const query = params.get("q");
+
+document.getElementById("title").innerText = "Results for: " + query;
+
+/* SEARCH */
+const results = database.filter(item =>
+  item.title.toLowerCase().includes(query.toLowerCase()) ||
+  item.description.toLowerCase().includes(query.toLowerCase())
+);
+
+const box = document.getElementById("results");
+
+if (results.length === 0) {
+  box.innerHTML = "<p>No results. Redirecting...</p>";
+
+  setTimeout(() => {
+    window.location.href =
+      "https://www.google.com/search?q=" + encodeURIComponent(query);
+  }, 1000);
+} else {
+  results.forEach(r => {
+    box.innerHTML += `
+      <div class="result">
+        <a href="${r.url}" target="_blank">${r.title}</a>
+        <p>${r.description}</p>
+      </div>
+    `;
+  });
+}
+</script>
+
+</body>
+</html>
