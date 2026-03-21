@@ -1,7 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <title>Jref</title>
 
 <style>
@@ -9,97 +8,42 @@ body {
   margin: 0;
   font-family: Arial;
   background: #e9e9e9;
+  text-align: center;
 }
 
-/* Top bar */
 .topbar {
   background: #e6c3d3;
   padding: 10px;
-  display: flex;
-  align-items: center;
 }
 
-.topbar input {
-  margin: 0 auto;
-  width: 50%;
-  padding: 8px;
+input {
+  padding: 10px;
   border-radius: 20px;
   border: none;
-  text-align: center;
+  width: 50%;
   background: #f2d6e0;
-}
-
-/* Sidebar */
-.sidebar {
-  position: absolute;
-  left: 10px;
-  top: 50px;
-}
-
-.sidebar button {
-  display: block;
-  margin-bottom: 10px;
-  background: #e6c3d3;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-/* Center */
-.center {
   text-align: center;
-  margin-top: 100px;
 }
 
 .title {
   font-size: 60px;
+  margin-top: 100px;
 }
 
-.search-bar {
-  width: 50%;
-  margin: 10px auto;
-  background: #e6c3d3;
-  padding: 10px;
-  border-radius: 20px;
-}
-
-.search-bar input {
-  width: 100%;
-  border: none;
-  background: transparent;
-  text-align: center;
-  outline: none;
-}
-
-/* Buttons */
 .buttons button {
   margin: 10px;
-  padding: 15px 25px;
+  padding: 15px;
   background: #e6c3d3;
   border: none;
   border-radius: 10px;
-  cursor: pointer;
 }
 
-/* Login modal */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-}
-
-.modal-content {
+.result {
   background: white;
-  padding: 20px;
-  margin: 100px auto;
-  width: 300px;
+  margin: 10px auto;
+  padding: 10px;
+  width: 400px;
   border-radius: 10px;
-  text-align: center;
 }
 </style>
 </head>
@@ -107,83 +51,57 @@ body {
 <body>
 
 <div class="topbar">
-  <span>?</span>
-  <input type="text" id="topSearch" placeholder="search">
+  <input id="search" placeholder="search">
 </div>
 
-<div class="sidebar">
-  <button onclick="openLogin()">login</button>
-  <button onclick="logout()">sign out</button>
-  <div id="userDisplay"></div>
+<div class="title">Jref</div>
+
+<div class="buttons">
+  <button onclick="quick('youtube')">YouTube</button>
+  <button onclick="quick('github')">GitHub</button>
 </div>
 
-<div class="center">
-  <div class="title">Jref</div>
+<div id="results"></div>
 
-  <div class="search-bar">
-    <input type="text" id="mainSearch" placeholder="search">
-  </div>
-
-  <div class="buttons">
-    <button>create</button>
-    <button>shortcut</button>
-    <button>account</button>
-    <button>api</button>
-  </div>
-</div>
-
-<!-- Login Modal -->
-<div class="modal" id="loginModal">
-  <div class="modal-content">
-    <h3>Login</h3>
-    <input id="username" placeholder="username"><br><br>
-    <button onclick="login()">Login</button>
-  </div>
-</div>
+<script src="data.js"></script>
 
 <script>
-/* SEARCH SYSTEM */
-function handleSearch(inputId) {
-  const query = document.getElementById(inputId).value;
-  if (query) {
-    window.location.href = "https://www.google.com/search?q=" + encodeURIComponent(query);
+function search(query) {
+  const results = database.filter(item =>
+    item.title.toLowerCase().includes(query.toLowerCase()) ||
+    item.description.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const box = document.getElementById("results");
+  box.innerHTML = "";
+
+  if (results.length === 0) {
+    box.innerHTML = "<p>No results. Searching web...</p>";
+
+    setTimeout(() => {
+      window.location.href =
+        "https://www.google.com/search?q=" + encodeURIComponent(query);
+    }, 800);
+    return;
   }
+
+  results.forEach(r => {
+    box.innerHTML += `
+      <div class="result">
+        <a href="${r.url}" target="_blank">${r.title}</a>
+        <p>${r.description}</p>
+      </div>
+    `;
+  });
 }
 
-document.getElementById("topSearch").addEventListener("keydown", e => {
-  if (e.key === "Enter") handleSearch("topSearch");
+document.getElementById("search").addEventListener("keydown", e => {
+  if (e.key === "Enter") search(e.target.value);
 });
 
-document.getElementById("mainSearch").addEventListener("keydown", e => {
-  if (e.key === "Enter") handleSearch("mainSearch");
-});
-
-/* LOGIN SYSTEM */
-function openLogin() {
-  document.getElementById("loginModal").style.display = "block";
+function quick(q) {
+  search(q);
 }
-
-function login() {
-  const username = document.getElementById("username").value;
-  if (!username) return;
-
-  localStorage.setItem("user", username);
-  document.getElementById("loginModal").style.display = "none";
-  updateUser();
-}
-
-function logout() {
-  localStorage.removeItem("user");
-  updateUser();
-}
-
-function updateUser() {
-  const user = localStorage.getItem("user");
-  document.getElementById("userDisplay").innerText =
-    user ? "Logged in as: " + user : "Not logged in";
-}
-
-updateUser();
 </script>
 
 </body>
