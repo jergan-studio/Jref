@@ -1,31 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Jref Editor</title>
+<title>Jref Builder</title>
 
 <style>
-body { font-family: Arial; background:#eee; }
+body { margin:0; font-family:Arial; background:#ddd; }
+
 .toolbar {
   background:#e6c3d3;
   padding:10px;
 }
+
 .toolbar button {
   margin:5px;
   padding:10px;
   border:none;
   border-radius:8px;
+  cursor:pointer;
 }
+
 .canvas {
-  margin:20px;
-  min-height:400px;
+  position:relative;
+  width:100%;
+  height:90vh;
   background:white;
-  padding:20px;
-  border-radius:10px;
+  overflow:hidden;
 }
-.element {
+
+/* draggable element */
+.box {
+  position:absolute;
   padding:10px;
-  margin:10px 0;
-  border:1px dashed #aaa;
+  background:#fff;
+  border:2px dashed #aaa;
+  cursor:move;
+  resize:both;
+  overflow:auto;
+  min-width:50px;
+  min-height:30px;
 }
 </style>
 </head>
@@ -33,11 +45,17 @@ body { font-family: Arial; background:#eee; }
 <body>
 
 <div class="toolbar">
-  <button onclick="addElement('link')">Link</button>
-  <button onclick="addElement('search')">Search</button>
-  <button onclick="addElement('image')">Image</button>
-  <button onclick="addElement('embed')">Embed</button>
+  <button onclick="add('link')">Link</button>
+  <button onclick="add('search')">Search</button>
+  <button onclick="add('image')">Image</button>
+  <button onclick="add('embed')">Embed</button>
+
+  <button onclick="setTheme('light')">Light</button>
+  <button onclick="setTheme('dark')">Dark</button>
+
   <button onclick="save()">💾 Save</button>
+  <button onclick="load()">📂 Load</button>
+  <button onclick="exportPage()">🚀 Publish</button>
 </div>
 
 <div class="canvas" id="canvas"></div>
@@ -45,16 +63,24 @@ body { font-family: Arial; background:#eee; }
 <script>
 let elements = [];
 
-function addElement(type) {
-  let data = { type };
+function add(type) {
+  let data = {
+    type,
+    x: 100,
+    y: 100,
+    w: 150,
+    h: 50
+  };
 
   if (type === "link") {
-    data.text = prompt("Link text:");
+    data.text = prompt("Text:");
     data.url = prompt("URL:");
   }
 
   if (type === "image") {
     data.src = prompt("Image URL:");
+    data.w = 200;
+    data.h = 150;
   }
 
   if (type === "embed") {
@@ -69,33 +95,116 @@ function render() {
   const canvas = document.getElementById("canvas");
   canvas.innerHTML = "";
 
-  elements.forEach(el => {
+  elements.forEach((el, i) => {
     let div = document.createElement("div");
-    div.className = "element";
+    div.className = "box";
 
+    div.style.left = el.x + "px";
+    div.style.top = el.y + "px";
+    div.style.width = el.w + "px";
+    div.style.height = el.h + "px";
+
+    /* content */
     if (el.type === "link") {
-      div.innerHTML = `<a href="${el.url}">${el.text}</a>`;
+      div.innerHTML = `<a href="${el.url}" target="_blank">${el.text}</a>`;
     }
 
     if (el.type === "search") {
-      div.innerHTML = `<input placeholder="Search...">`;
+      div.innerHTML = `<input placeholder="Search..." style="width:100%">`;
     }
 
     if (el.type === "image") {
-      div.innerHTML = `<img src="${el.src}" width="200">`;
+      div.innerHTML = `<img src="${el.src}" width="100%">`;
     }
 
     if (el.type === "embed") {
       div.innerHTML = el.html;
     }
 
+    /* drag */
+    let offsetX, offsetY;
+    div.onmousedown = e => {
+      offsetX = e.offsetX;
+      offsetY = e.offsetY;
+
+      document.onmousemove = e2 => {
+        el.x = e2.pageX - offsetX;
+        el.y = e2.pageY - offsetY;
+        render();
+      };
+
+      document.onmouseup = () => {
+        document.onmousemove = null;
+      };
+    };
+
+    /* resize tracking */
+    div.onmouseup = () => {
+      el.w = div.offsetWidth;
+      el.h = div.offsetHeight;
+    };
+
     canvas.appendChild(div);
   });
 }
 
+/* SAVE / LOAD */
 function save() {
-  localStorage.setItem("jref_page", JSON.stringify(elements));
+  localStorage.setItem("jref_builder", JSON.stringify(elements));
   alert("Saved!");
+}
+
+function load() {
+  elements = JSON.parse(localStorage.getItem("jref_builder")) || [];
+  render();
+}
+
+/* THEMES */
+function setTheme(t) {
+  if (t === "dark") {
+    document.body.style.background = "#222";
+    document.querySelector(".canvas").style.background = "#333";
+  } else {
+    document.body.style.background = "#ddd";
+    document.querySelector(".canvas").style.background = "#fff";
+  }
+}
+
+/* EXPORT */
+function exportPage() {
+  const data = JSON.stringify(elements);
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+const elements = ${data};
+
+elements.forEach(el => {
+  let div = document.createElement("div");
+  div.style.position="absolute";
+  div.style.left=el.x+"px";
+  div.style.top=el.y+"px";
+  div.style.width=el.w+"px";
+
+  if(el.type==="link") div.innerHTML=\`<a href="\${el.url}">\${el.text}</a>\`;
+  if(el.type==="image") div.innerHTML=\`<img src="\${el.src}" width="100%">\`;
+  if(el.type==="search") div.innerHTML=\`<input placeholder="Search">\`;
+  if(el.type==="embed") div.innerHTML=el.html;
+
+  document.body.appendChild(div);
+});
+<\/script>
+</body>
+</html>
+`;
+
+  const blob = new Blob([html], { type: "text/html" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "jref-page.html";
+  a.click();
 }
 </script>
 
