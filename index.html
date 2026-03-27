@@ -4,123 +4,48 @@
 <title>Jref</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: #e9e9e9;
-  text-align: center;
-  transition: 0.3s;
+body { font-family: Arial; text-align:center; background:#e9e9e9; }
+.box {
+  background:white;
+  margin:20px auto;
+  padding:20px;
+  width:300px;
+  border-radius:10px;
+  cursor:pointer;
+  transition:0.2s;
 }
-
-.topbar {
-  background: #e6c3d3;
-  padding: 10px;
-}
-
-input {
-  padding: 10px;
-  border-radius: 20px;
-  border: none;
-  width: 50%;
-  background: #f2d6e0;
-  text-align: center;
-  transition: 0.2s;
-}
-
-input:focus {
-  transform: scale(1.05);
-}
-
-/* Title animation */
-.title {
-  font-size: 60px;
-  margin-top: 100px;
-  opacity: 0;
-  transform: translateY(20px);
-  animation: fadeIn 0.6s forwards;
-}
-
-/* Buttons */
-.shortcuts {
-  margin-top: 20px;
-}
-
-.shortcuts button {
-  margin: 10px;
-  padding: 15px;
-  background: #e6c3d3;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.shortcuts button:hover {
-  transform: scale(1.1);
-}
-
-/* Animations */
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+.box:hover { transform:scale(1.05); }
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
-  <input id="search" placeholder="Search Jref... (try: yt, gh)">
-</div>
+<h1>Jref</h1>
 
-<div class="title">Jref</div>
-
-<div class="shortcuts">
-  <button onclick="go('youtube')">YouTube</button>
-  <button onclick="go('github')">GitHub</button>
-  <button onclick="go('google')">Google</button>
-</div>
-
-<script src="data.js"></script>
+<div class="box" onclick="go('home')">🏠 Normal Homepage</div>
+<div class="box" onclick="go('my')">📁 Your Homepages</div>
+<div class="box" onclick="go('editor')">🛠 Create Homepage</div>
 
 <script>
-/* SHORTCUT SYSTEM */
-const shortcuts = {
-  yt: "https://youtube.com",
-  gh: "https://github.com",
-  g: "https://google.com"
-};
-
-function go(name) {
-  window.open("https://" + name + ".com", "_blank");
+function go(type) {
+  if(type==="home") location.href="home.html";
+  if(type==="editor") location.href="editor.html";
+  if(type==="my") showPages();
 }
 
-/* SEARCH */
-document.getElementById("search").addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    const query = e.target.value;
+function showPages() {
+  const saved = JSON.parse(localStorage.getItem("jref_links")) || [];
+  document.body.innerHTML = "<h2>Your Pages</h2>";
 
-    /* shortcut check */
-    if (shortcuts[query]) {
-      window.location.href = shortcuts[query];
-      return;
-    }
-
-    /* go to results page */
-    window.location.href = "results.html?q=" + encodeURIComponent(query);
-  }
-});
-
-/* "/" focus shortcut */
-document.addEventListener("keydown", e => {
-  if (e.key === "/") {
-    e.preventDefault();
-    document.getElementById("search").focus();
-  }
-});
+  saved.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="box";
+    div.innerText=p.name;
+    div.onclick=()=>window.open(p.url);
+    document.body.appendChild(div);
+  });
+}
 </script>
 
 </body>
-</html> 
+</html>
