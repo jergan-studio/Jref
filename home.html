@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Jref</title>
+
+<style>
+body { font-family: Arial; text-align:center; background:#e9e9e9; }
+input {
+  padding:10px;
+  width:50%;
+  border-radius:20px;
+  border:none;
+  background:#e6c3d3;
+}
+.title { font-size:60px; margin-top:100px; }
+button {
+  margin:10px;
+  padding:15px;
+  border:none;
+  border-radius:10px;
+  background:#e6c3d3;
+}
+</style>
+</head>
+
+<body>
+
+<div class="title">Jref</div>
+<input id="search" placeholder="Search or type (yt, gh)">
+<br>
+
+<button onclick="quick('yt')">YouTube</button>
+<button onclick="quick('gh')">GitHub</button>
+
+<script src="data.js"></script>
+
+<script>
+const shortcuts = {
+  yt:"https://youtube.com",
+  gh:"https://github.com"
+};
+
+document.getElementById("search").addEventListener("keydown", e=>{
+  if(e.key==="Enter"){
+    const q=e.target.value;
+
+    if(shortcuts[q]){
+      location.href=shortcuts[q];
+      return;
+    }
+
+    location.href="results.html?q="+encodeURIComponent(q);
+  }
+});
+
+function quick(q){ location.href=shortcuts[q]; }
+</script>
+
+</body>
+</html>
