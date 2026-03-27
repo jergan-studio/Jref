@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Jref Page</title>
+
+<style>
+body { font-family: Arial; text-align:center; background:#e9e9e9; }
+</style>
+</head>
+
+<body>
+
+<h1>My Page</h1>
+<div id="page"></div>
+
+<script>
+const elements = JSON.parse(localStorage.getItem("jref_page")) || [];
+const page = document.getElementById("page");
+
+elements.forEach(el => {
+  let div = document.createElement("div");
+
+  if (el.type === "link") {
+    div.innerHTML = `<a href="${el.url}">${el.text}</a>`;
+  }
+
+  if (el.type === "search") {
+    div.innerHTML = `
+      <input placeholder="Search..." onkeydown="if(event.key==='Enter'){window.location.href='results.html?q='+this.value}">
+    `;
+  }
+
+  if (el.type === "image") {
+    div.innerHTML = `<img src="${el.src}" width="200">`;
+  }
+
+  if (el.type === "embed") {
+    div.innerHTML = el.html;
+  }
+
+  page.appendChild(div);
+});
+</script>
+
+</body>
+</html>
