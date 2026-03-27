@@ -3,22 +3,31 @@
 <body>
 
 <script>
-const elements = JSON.parse(localStorage.getItem("jref_builder")) || [];
+const params=new URLSearchParams(location.search);
+const id=params.get("id");
 
-elements.forEach(el => {
-  let div = document.createElement("div");
+let elements=[];
 
-  div.style.position="absolute";
-  div.style.left=el.x+"px";
-  div.style.top=el.y+"px";
-  div.style.width=el.w+"px";
+if(id){
+  elements=JSON.parse(atob(id));
+}else{
+  elements=JSON.parse(localStorage.getItem("jref_builder"))||[];
+}
 
-  if(el.type==="link") div.innerHTML=`<a href="${el.url}">${el.text}</a>`;
-  if(el.type==="image") div.innerHTML=`<img src="${el.src}" width="100%">`;
-  if(el.type==="search") div.innerHTML=`<input placeholder="Search">`;
-  if(el.type==="embed") div.innerHTML=el.html;
+elements.forEach(el=>{
+  let d=document.createElement("div");
 
-  document.body.appendChild(div);
+  d.style.position="absolute";
+  d.style.left=el.x+"px";
+  d.style.top=el.y+"px";
+  d.style.width=el.w+"px";
+
+  if(el.type==="link") d.innerHTML=`<a href="${el.url}">${el.text}</a>`;
+  if(el.type==="image") d.innerHTML=`<img src="${el.src}" width="100%">`;
+  if(el.type==="search") d.innerHTML=`<input placeholder="Search">`;
+  if(el.type==="embed") d.innerHTML=el.html;
+
+  document.body.appendChild(d);
 });
 </script>
 
