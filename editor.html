@@ -1,43 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Jref Builder</title>
+<title>Builder</title>
 
 <style>
 body { margin:0; font-family:Arial; background:#ddd; }
-
-.toolbar {
-  background:#e6c3d3;
-  padding:10px;
-}
-
-.toolbar button {
-  margin:5px;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-}
-
+.toolbar { background:#e6c3d3; padding:10px; }
+.toolbar button { margin:5px; padding:10px; }
 .canvas {
   position:relative;
-  width:100%;
   height:90vh;
   background:white;
-  overflow:hidden;
 }
-
-/* draggable element */
 .box {
   position:absolute;
-  padding:10px;
-  background:#fff;
   border:2px dashed #aaa;
-  cursor:move;
+  padding:10px;
   resize:both;
   overflow:auto;
-  min-width:50px;
-  min-height:30px;
+  cursor:move;
 }
 </style>
 </head>
@@ -50,161 +31,95 @@ body { margin:0; font-family:Arial; background:#ddd; }
   <button onclick="add('image')">Image</button>
   <button onclick="add('embed')">Embed</button>
 
-  <button onclick="setTheme('light')">Light</button>
-  <button onclick="setTheme('dark')">Dark</button>
+  <button onclick="theme('light')">Light</button>
+  <button onclick="theme('dark')">Dark</button>
 
   <button onclick="save()">💾 Save</button>
-  <button onclick="load()">📂 Load</button>
-  <button onclick="exportPage()">🚀 Publish</button>
+  <button onclick="publish()">🌐 Publish</button>
 </div>
 
-<div class="canvas" id="canvas"></div>
+<div id="canvas" class="canvas"></div>
 
 <script>
-let elements = [];
+let elements=[];
 
-function add(type) {
-  let data = {
-    type,
-    x: 100,
-    y: 100,
-    w: 150,
-    h: 50
-  };
+function add(type){
+  let el={type,x:100,y:100,w:150,h:50};
 
-  if (type === "link") {
-    data.text = prompt("Text:");
-    data.url = prompt("URL:");
+  if(type==="link"){
+    el.text=prompt("Text:");
+    el.url=prompt("URL:");
+  }
+  if(type==="image"){
+    el.src=prompt("Image URL:");
+    el.w=200; el.h=150;
+  }
+  if(type==="embed"){
+    el.html=prompt("Embed HTML:");
   }
 
-  if (type === "image") {
-    data.src = prompt("Image URL:");
-    data.w = 200;
-    data.h = 150;
-  }
-
-  if (type === "embed") {
-    data.html = prompt("Embed HTML:");
-  }
-
-  elements.push(data);
+  elements.push(el);
   render();
 }
 
-function render() {
-  const canvas = document.getElementById("canvas");
-  canvas.innerHTML = "";
+function render(){
+  const c=document.getElementById("canvas");
+  c.innerHTML="";
 
-  elements.forEach((el, i) => {
-    let div = document.createElement("div");
-    div.className = "box";
+  elements.forEach((el,i)=>{
+    const d=document.createElement("div");
+    d.className="box";
 
-    div.style.left = el.x + "px";
-    div.style.top = el.y + "px";
-    div.style.width = el.w + "px";
-    div.style.height = el.h + "px";
+    d.style.left=el.x+"px";
+    d.style.top=el.y+"px";
+    d.style.width=el.w+"px";
+    d.style.height=el.h+"px";
 
-    /* content */
-    if (el.type === "link") {
-      div.innerHTML = `<a href="${el.url}" target="_blank">${el.text}</a>`;
-    }
+    if(el.type==="link") d.innerHTML=`<a href="${el.url}">${el.text}</a>`;
+    if(el.type==="search") d.innerHTML=`<input placeholder="Search">`;
+    if(el.type==="image") d.innerHTML=`<img src="${el.src}" width="100%">`;
+    if(el.type==="embed") d.innerHTML=el.html;
 
-    if (el.type === "search") {
-      div.innerHTML = `<input placeholder="Search..." style="width:100%">`;
-    }
-
-    if (el.type === "image") {
-      div.innerHTML = `<img src="${el.src}" width="100%">`;
-    }
-
-    if (el.type === "embed") {
-      div.innerHTML = el.html;
-    }
-
-    /* drag */
-    let offsetX, offsetY;
-    div.onmousedown = e => {
-      offsetX = e.offsetX;
-      offsetY = e.offsetY;
-
-      document.onmousemove = e2 => {
-        el.x = e2.pageX - offsetX;
-        el.y = e2.pageY - offsetY;
+    d.onmousedown=e=>{
+      let ox=e.offsetX, oy=e.offsetY;
+      document.onmousemove=e2=>{
+        el.x=e2.pageX-ox;
+        el.y=e2.pageY-oy;
         render();
       };
-
-      document.onmouseup = () => {
-        document.onmousemove = null;
-      };
+      document.onmouseup=()=>document.onmousemove=null;
     };
 
-    /* resize tracking */
-    div.onmouseup = () => {
-      el.w = div.offsetWidth;
-      el.h = div.offsetHeight;
+    d.onmouseup=()=>{
+      el.w=d.offsetWidth;
+      el.h=d.offsetHeight;
     };
 
-    canvas.appendChild(div);
+    c.appendChild(d);
   });
 }
 
-/* SAVE / LOAD */
-function save() {
-  localStorage.setItem("jref_builder", JSON.stringify(elements));
+function save(){
+  localStorage.setItem("jref_builder",JSON.stringify(elements));
   alert("Saved!");
 }
 
-function load() {
-  elements = JSON.parse(localStorage.getItem("jref_builder")) || [];
-  render();
+function theme(t){
+  document.body.style.background=t==="dark"?"#222":"#ddd";
 }
 
-/* THEMES */
-function setTheme(t) {
-  if (t === "dark") {
-    document.body.style.background = "#222";
-    document.querySelector(".canvas").style.background = "#333";
-  } else {
-    document.body.style.background = "#ddd";
-    document.querySelector(".canvas").style.background = "#fff";
-  }
-}
+function publish(){
+  const data=btoa(JSON.stringify(elements));
+  const url=location.origin+"/view.html?id="+data;
 
-/* EXPORT */
-function exportPage() {
-  const data = JSON.stringify(elements);
+  let saved=JSON.parse(localStorage.getItem("jref_links"))||[];
+  saved.push({
+    name: prompt("Page name:"),
+    url
+  });
+  localStorage.setItem("jref_links",JSON.stringify(saved));
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<body>
-<script>
-const elements = ${data};
-
-elements.forEach(el => {
-  let div = document.createElement("div");
-  div.style.position="absolute";
-  div.style.left=el.x+"px";
-  div.style.top=el.y+"px";
-  div.style.width=el.w+"px";
-
-  if(el.type==="link") div.innerHTML=\`<a href="\${el.url}">\${el.text}</a>\`;
-  if(el.type==="image") div.innerHTML=\`<img src="\${el.src}" width="100%">\`;
-  if(el.type==="search") div.innerHTML=\`<input placeholder="Search">\`;
-  if(el.type==="embed") div.innerHTML=el.html;
-
-  document.body.appendChild(div);
-});
-<\/script>
-</body>
-</html>
-`;
-
-  const blob = new Blob([html], { type: "text/html" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "jref-page.html";
-  a.click();
+  prompt("Copy link:",url);
 }
 </script>
 
