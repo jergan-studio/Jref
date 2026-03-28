@@ -3,16 +3,17 @@
 <body>
 
 <script>
+function search(q){
+  const shortcuts={ yt:"https://youtube.com", gh:"https://github.com" };
+  if(shortcuts[q]) return location.href=shortcuts[q];
+  location.href="results.html?q="+encodeURIComponent(q);
+}
+
 const params=new URLSearchParams(location.search);
 const id=params.get("id");
 
-let elements=[];
-
-if(id){
-  elements=JSON.parse(atob(id));
-}else{
-  elements=JSON.parse(localStorage.getItem("jref_builder"))||[];
-}
+let elements=id ? JSON.parse(atob(id)) :
+JSON.parse(localStorage.getItem("jref_builder"))||[];
 
 elements.forEach(el=>{
   let d=document.createElement("div");
@@ -22,9 +23,21 @@ elements.forEach(el=>{
   d.style.top=el.y+"px";
   d.style.width=el.w+"px";
 
+  d.style.borderRadius=(el.radius||10)+"px";
+  d.style.background=el.bg||"#fff";
+  d.style.color=el.color||"#000";
+  d.style.padding="10px";
+
   if(el.type==="link") d.innerHTML=`<a href="${el.url}">${el.text}</a>`;
+  
+  if(el.type==="search"){
+    d.innerHTML=`
+      <input style="width:100%" placeholder="Search"
+      onkeydown="if(event.key==='Enter'){search(this.value)}">
+    `;
+  }
+
   if(el.type==="image") d.innerHTML=`<img src="${el.src}" width="100%">`;
-  if(el.type==="search") d.innerHTML=`<input placeholder="Search">`;
   if(el.type==="embed") d.innerHTML=el.html;
 
   document.body.appendChild(d);
