@@ -1,59 +1,44 @@
 <!DOCTYPE html>
 <html>
-<body>
+<head>
+<title>View</title>
 
-<script>
-function doSearch(q){
-  if(!q) return;
-
-  const shortcuts={ yt:"https://youtube.com", gh:"https://github.com" };
-
-  if(shortcuts[q]) return location.href=shortcuts[q];
-
-  location.href="results.html?q="+encodeURIComponent(q);
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  background: #e9e9e9;
 }
 
-const params=new URLSearchParams(location.search);
-const id=params.get("id");
+.box {
+  margin-top: 100px;
+}
+</style>
+</head>
 
-let elements=id ? JSON.parse(atob(id)) :
-JSON.parse(localStorage.getItem("jref_builder"))||[];
+<body>
 
-elements.forEach(el=>{
-  let d=document.createElement("div");
+<div class="box">
+  <h1>Loading...</h1>
+  <p id="q"></p>
 
-  d.style.position="absolute";
-  d.style.left=el.x+"px";
-  d.style.top=el.y+"px";
-  d.style.width=el.w+"px";
+  <button onclick="goHome()">Home</button>
+  <button onclick="searchGoogle()">Search Google</button>
+</div>
 
-  d.style.borderRadius=(el.radius||10)+"px";
-  d.style.background=el.bg||"#fff";
-  d.style.color=el.color||"#000";
-  d.style.padding="10px";
+<script>
+const params = new URLSearchParams(window.location.search);
+const q = params.get("q");
 
-  if(el.type==="link") d.innerHTML=`<a href="${el.url}">${el.text}</a>`;
+document.getElementById("q").innerText = q;
 
-  if(el.type==="search"){
-    d.innerHTML=`
-      <input placeholder="Search..." style="width:70%;padding:8px;">
-      <button>Go</button>
-    `;
+function goHome() {
+  location.href = "home.html";
+}
 
-    const input=d.querySelector("input");
-    const btn=d.querySelector("button");
-
-    btn.onclick=()=>doSearch(input.value);
-    input.onkeydown=e=>{
-      if(e.key==="Enter") doSearch(input.value);
-    };
-  }
-
-  if(el.type==="image") d.innerHTML=`<img src="${el.src}" width="100%">`;
-  if(el.type==="embed") d.innerHTML=el.html;
-
-  document.body.appendChild(d);
-});
+function searchGoogle() {
+  location.href = "https://www.google.com/search?q=" + encodeURIComponent(q);
+}
 </script>
 
 </body>
