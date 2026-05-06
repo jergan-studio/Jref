@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>View</title>
+<title>Jref View</title>
 
 <style>
 body {
@@ -11,7 +11,16 @@ body {
 }
 
 .box {
-  margin-top: 100px;
+  margin-top: 120px;
+}
+
+button {
+  margin: 10px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #e6c3d3;
+  cursor: pointer;
 }
 </style>
 </head>
@@ -19,25 +28,35 @@ body {
 <body>
 
 <div class="box">
-  <h1>Loading...</h1>
-  <p id="q"></p>
+  <h1 id="status">Loading...</h1>
+  <h2 id="query"></h2>
 
-  <button onclick="goHome()">Home</button>
-  <button onclick="searchGoogle()">Search Google</button>
+  <button onclick="location.href='home.html'">Home</button>
+  <button onclick="location.href='search.html'">Search</button>
+  <button onclick="googleSearch()">Google</button>
 </div>
 
 <script>
 const params = new URLSearchParams(window.location.search);
 const q = params.get("q");
 
-document.getElementById("q").innerText = q;
+const status = document.getElementById("status");
+const query = document.getElementById("query");
 
-function goHome() {
-  location.href = "home.html";
+if (!q || q.trim() === "") {
+  status.innerText = "No search query";
+  query.innerText = "";
+} else {
+  status.innerText = "Results for:";
+  query.innerText = q;
 }
 
-function searchGoogle() {
-  location.href = "https://www.google.com/search?q=" + encodeURIComponent(q);
+function googleSearch() {
+  if (q) {
+    location.href = "https://www.google.com/search?q=" + encodeURIComponent(q);
+  } else {
+    location.href = "https://www.google.com";
+  }
 }
 </script>
 
