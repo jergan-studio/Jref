@@ -32,73 +32,100 @@ const id = params.get("id");
 
 let objects = [];
 
-// decode base64 safely
-function decodeData() {
-  if (!id) return;
+/* ---------------- SAFE DECODE ---------------- */
+function decode() {
+  if (!id) {
+    objects = [{
+      type: "text",
+      x: 50,
+      y: 80,
+      text: "No data provided",
+      size: 30,
+      color: "red"
+    }];
+    return;
+  }
 
   try {
     const json = atob(id);
-    objects = JSON.parse(json);
+    const parsed = JSON.parse(json);
+
+    if (Array.isArray(parsed)) {
+      objects = parsed;
+    } else {
+      throw new Error("Not array");
+    }
+
   } catch (e) {
     console.log("Decode error:", e);
-    objects = [];
+
+    objects = [{
+      type: "text",
+      x: 50,
+      y: 80,
+      text: "Invalid or corrupted data",
+      size: 30,
+      color: "red"
+    }];
   }
 }
 
-decodeData();
+decode();
 
-// cache images (IMPORTANT fix for flickering/blank issue)
-const imageCache = {};
+/* ---------------- IMAGE CACHE ---------------- */
+const cache = {};
 
 function loadImage(src) {
-  if (imageCache[src]) return imageCache[src];
-
-  const img = new Image();
-  img.src = src;
-  imageCache[src] = img;
-  return img;
+  if (!cache[src]) {
+    const img = new Image();
+    img.src = src;
+    cache[src] = img;
+  }
+  return cache[src];
 }
 
-// render loop
-function draw() {
+/* ---------------- RENDER LOOP ---------------- */
+function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  objects.forEach(obj => {
+  objects.forEach(o => {
 
-    // IMAGE
-    if (obj.type === "image") {
-      const img = loadImage(obj.src);
+    /* IMAGE */
+    if (o.type === "image") {
+      const img = loadImage(o.src);
 
-      if (img.complete) {
-        ctx.drawImage(
-          img,
-          obj.x || 0,
-          obj.y || 0,
-          obj.w || 100,
-          obj.h || 100
-        );
+      if (img && img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, o.x, o.y, o.w, o.h);
+      } else {
+        // fallback (prevents blank screen)
+        ctx.fillStyle = "red";
+        ctx.fillRect(o.x, o.y, o.w, o.h);
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Arial";
+        ctx.fillText("IMG", o.x + 5, o.y + 20);
       }
     }
 
-    // RECTANGLE
-    if (obj.type === "rect") {
-      ctx.fillStyle = obj.color || "black";
-      ctx.fillRect(obj.x || 0, obj.y || 0, obj.w || 50, obj.h || 50);
+    /* RECTANGLE */
+    if (o.type === "rect") {
+      ctx.fillStyle = o.color || "black";
+      ctx.fillRect(o.x, o.y, o.w, o.h);
     }
 
-    // TEXT
-    if (obj.type === "text") {
-      ctx.fillStyle = obj.color || "black";
-      ctx.font = (obj.size || 20) + "px Arial";
-      ctx.fillText(obj.text || "", obj.x || 0, obj.y || 0);
+    /* TEXT */
+    if (o.type === "text") {
+      ctx.fillStyle = o.color || "black";
+      ctx.font = (o.size || 20) + "px Arial";
+      ctx.fillText(o.text || "", o.x, o.y);
     }
 
   });
 
-  requestAnimationFrame(draw);
+  requestAnimationFrame(render);
 }
 
-draw();
+render();
 </script>
 
 </body>
