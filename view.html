@@ -1,64 +1,25 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Jref View</title>
-
-<style>
-body {
-  font-family: Arial;
-  text-align: center;
-  background: #e9e9e9;
-}
-
-.box {
-  margin-top: 120px;
-}
-
-button {
-  margin: 10px;
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-  background: #e6c3d3;
-  cursor: pointer;
-}
-</style>
-</head>
-
-<body>
-
-<div class="box">
-  <h1 id="status">Loading...</h1>
-  <h2 id="query"></h2>
-
-  <button onclick="location.href='home.html'">Home</button>
-  <button onclick="location.href='search.html'">Search</button>
-  <button onclick="googleSearch()">Google</button>
-</div>
-
 <script>
 const params = new URLSearchParams(window.location.search);
-const q = params.get("q");
+let q = params.get("q");
 
-const status = document.getElementById("status");
-const query = document.getElementById("query");
+// safety fix (handles empty + broken inputs)
+if (!q || q === "null" || q === "undefined") {
+  q = "";
+}
 
-if (!q || q.trim() === "") {
-  status.innerText = "No search query";
-  query.innerText = "";
+document.getElementById("query").innerText = q;
+
+if (q.trim() === "") {
+  document.getElementById("status").innerText = "No search query";
 } else {
-  status.innerText = "Results for:";
-  query.innerText = q;
+  document.getElementById("status").innerText = "Results for:";
 }
 
 function googleSearch() {
-  if (q) {
+  if (q.trim() !== "") {
     location.href = "https://www.google.com/search?q=" + encodeURIComponent(q);
   } else {
     location.href = "https://www.google.com";
   }
 }
 </script>
-
-</body>
-</html>
