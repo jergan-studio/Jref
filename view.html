@@ -3,9 +3,13 @@
 <body>
 
 <script>
-function search(q){
+function doSearch(q){
+  if(!q) return;
+
   const shortcuts={ yt:"https://youtube.com", gh:"https://github.com" };
+
   if(shortcuts[q]) return location.href=shortcuts[q];
+
   location.href="results.html?q="+encodeURIComponent(q);
 }
 
@@ -29,12 +33,20 @@ elements.forEach(el=>{
   d.style.padding="10px";
 
   if(el.type==="link") d.innerHTML=`<a href="${el.url}">${el.text}</a>`;
-  
+
   if(el.type==="search"){
     d.innerHTML=`
-      <input style="width:100%" placeholder="Search"
-      onkeydown="if(event.key==='Enter'){search(this.value)}">
+      <input placeholder="Search..." style="width:70%;padding:8px;">
+      <button>Go</button>
     `;
+
+    const input=d.querySelector("input");
+    const btn=d.querySelector("button");
+
+    btn.onclick=()=>doSearch(input.value);
+    input.onkeydown=e=>{
+      if(e.key==="Enter") doSearch(input.value);
+    };
   }
 
   if(el.type==="image") d.innerHTML=`<img src="${el.src}" width="100%">`;
