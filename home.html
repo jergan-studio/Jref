@@ -16,17 +16,17 @@ input {
   border-radius: 20px;
   border: none;
   background: #e6c3d3;
-  outline: none;
+  margin: 5px;
 }
 
 .title {
   font-size: 60px;
-  margin-top: 100px;
+  margin-top: 80px;
 }
 
 button {
-  margin: 10px;
-  padding: 15px;
+  margin: 5px;
+  padding: 12px;
   border: none;
   border-radius: 10px;
   background: #e6c3d3;
@@ -36,6 +36,10 @@ button {
 button:hover {
   background: #d9a9bf;
 }
+
+.box {
+  margin-top: 20px;
+}
 </style>
 </head>
 
@@ -43,40 +47,71 @@ button:hover {
 
 <div class="title">Jref</div>
 
-<input id="search" placeholder="Search or type (yt, gh, ai)">
+<input id="search" placeholder="Search or shortcut (yt, gh, gd)">
 <br>
 
 <button onclick="quick('yt')">YouTube</button>
 <button onclick="quick('gh')">GitHub</button>
 <button onclick="openAI()">Giznoz AI</button>
 
+<hr>
+
+<h3>Add Shortcut</h3>
+
+<input id="name" placeholder="shortcut name (gd)">
+<br>
+<input id="url" placeholder="https://example.com">
+<br>
+<button onclick="addShortcut()">Add</button>
+
 <script>
-const shortcuts = {
+let shortcuts = {
   yt: "https://youtube.com",
   gh: "https://github.com",
   ai: "https://gizno-ai.vercel.app/"
 };
 
-// Enter key search
+/* load saved shortcuts */
+const saved = JSON.parse(localStorage.getItem("jref_shortcuts") || "{}");
+shortcuts = {...shortcuts, ...saved};
+
+/* search */
 document.getElementById("search").addEventListener("keydown", e => {
   if (e.key === "Enter") {
     const q = e.target.value.trim();
 
     if (shortcuts[q]) {
       location.href = shortcuts[q];
-      return;
+    } else {
+      location.href = "https://www.google.com/search?q=" + encodeURIComponent(q);
     }
-
-    location.href = "results.html?q=" + encodeURIComponent(q);
   }
 });
 
+/* quick buttons */
 function quick(key) {
   location.href = shortcuts[key];
 }
 
+/* AI */
 function openAI() {
   location.href = shortcuts.ai;
+}
+
+/* ADD SHORTCUT */
+function addShortcut() {
+  const name = document.getElementById("name").value.trim();
+  const url = document.getElementById("url").value.trim();
+
+  if (!name || !url) return alert("Fill both fields");
+
+  saved[name] = url;
+
+  localStorage.setItem("jref_shortcuts", JSON.stringify(saved));
+
+  shortcuts[name] = url;
+
+  alert("Shortcut added: " + name);
 }
 </script>
 
