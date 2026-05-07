@@ -8,6 +8,12 @@ body {
   font-family: Arial;
   text-align: center;
   background: #e9e9e9;
+  margin: 0;
+}
+
+.title {
+  font-size: 60px;
+  margin-top: 80px;
 }
 
 input {
@@ -17,11 +23,7 @@ input {
   border: none;
   background: #e6c3d3;
   margin: 5px;
-}
-
-.title {
-  font-size: 60px;
-  margin-top: 80px;
+  outline: none;
 }
 
 button {
@@ -37,9 +39,27 @@ button:hover {
   background: #d9a9bf;
 }
 
-.box {
-  margin-top: 20px;
+/* popup */
+#panel {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  z-index: 999;
+  width: 300px;
 }
+
+#panel input {
+  width: 100%;
+  margin: 5px 0;
+  background: #f2f2f2;
+}
+
 </style>
 </head>
 
@@ -47,24 +67,33 @@ button:hover {
 
 <div class="title">Jref</div>
 
+<!-- SEARCH BAR -->
 <input id="search" placeholder="Search or shortcut (yt, gh, gd)">
 <br>
 
+<!-- DEFAULT SHORTCUTS -->
 <button onclick="quick('yt')">YouTube</button>
 <button onclick="quick('gh')">GitHub</button>
 <button onclick="openAI()">Giznoz AI</button>
 
-<hr>
+<!-- ADD SHORTCUT BUTTON -->
+<button onclick="togglePanel()">＋ Add Shortcut</button>
+
+<!-- POPUP -->
+<div id="panel">
 
 <h3>Add Shortcut</h3>
 
-<input id="name" placeholder="shortcut name (gd)">
-<br>
+<input id="name" placeholder="name (gd)">
 <input id="url" placeholder="https://example.com">
-<br>
-<button onclick="addShortcut()">Add</button>
+
+<button onclick="addShortcut()">Save</button>
+<button onclick="togglePanel()">Close</button>
+
+</div>
 
 <script>
+/* default shortcuts */
 let shortcuts = {
   yt: "https://youtube.com",
   gh: "https://github.com",
@@ -75,7 +104,7 @@ let shortcuts = {
 const saved = JSON.parse(localStorage.getItem("jref_shortcuts") || "{}");
 shortcuts = {...shortcuts, ...saved};
 
-/* search */
+/* search system */
 document.getElementById("search").addEventListener("keydown", e => {
   if (e.key === "Enter") {
     const q = e.target.value.trim();
@@ -98,7 +127,13 @@ function openAI() {
   location.href = shortcuts.ai;
 }
 
-/* ADD SHORTCUT */
+/* toggle popup */
+function togglePanel() {
+  const p = document.getElementById("panel");
+  p.style.display = (p.style.display === "block") ? "none" : "block";
+}
+
+/* add shortcut */
 function addShortcut() {
   const name = document.getElementById("name").value.trim();
   const url = document.getElementById("url").value.trim();
@@ -106,12 +141,16 @@ function addShortcut() {
   if (!name || !url) return alert("Fill both fields");
 
   saved[name] = url;
-
   localStorage.setItem("jref_shortcuts", JSON.stringify(saved));
 
   shortcuts[name] = url;
 
   alert("Shortcut added: " + name);
+
+  document.getElementById("name").value = "";
+  document.getElementById("url").value = "";
+
+  togglePanel();
 }
 </script>
 
