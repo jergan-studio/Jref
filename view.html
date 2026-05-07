@@ -1,32 +1,61 @@
+  <!DOCTYPE html>
+<html>
+<body style="margin:0; position:relative;">
+
 <script>
-const params = new URLSearchParams(window.location.search);
-const encoded = params.get("id");
+const params = new URLSearchParams(location.search);
+const id = params.get("id");
 
 let elements = [];
 
-if (encoded) {
-  try {
-    elements = JSON.parse(atob(encoded));
-  } catch {
-    document.body.innerHTML = "<h2>Invalid page</h2>";
+/* ---------------- SAFE LOAD ---------------- */
+try {
+  if (id) {
+    elements = JSON.parse(atob(id));
+  } else {
+    elements = JSON.parse(localStorage.getItem("jref_builder")) || [];
   }
-} else {
-  elements = JSON.parse(localStorage.getItem("jref_builder")) || [];
+} catch (e) {
+  console.log("Load error:", e);
+  elements = [];
 }
 
+/* ---------------- RENDER ---------------- */
 elements.forEach(el => {
-  let div = document.createElement("div");
 
-  div.style.position = "absolute";
-  div.style.left = el.x + "px";
-  div.style.top = el.y + "px";
-  div.style.width = el.w + "px";
+  const d = document.createElement("div");
 
-  if (el.type === "link") div.innerHTML = `<a href="${el.url}">${el.text}</a>`;
-  if (el.type === "image") div.innerHTML = `<img src="${el.src}" width="100%">`;
-  if (el.type === "search") div.innerHTML = `<input placeholder="Search">`;
-  if (el.type === "embed") div.innerHTML = el.html;
+  /* safe defaults */
+  d.style.position = "absolute";
+  d.style.left = (el.x || 0) + "px";
+  d.style.top = (el.y || 0) + "px";
+  d.style.width = (el.w || 100) + "px";
 
-  document.body.appendChild(div);
+  /* ---------------- TYPES ---------------- */
+
+  if (el.type === "link") {
+    d.innerHTML = `<a href="${el.url || "#"}" target="_blank">${el.text || "link"}</a>`;
+  }
+
+  else if (el.type === "image") {
+    d.innerHTML = `<img src="${el.src || ""}" style="width:100%; height:auto;" onerror="this.style.display='none'">`;
+  }
+
+  else if (el.type === "search") {
+    d.innerHTML = `<input placeholder="Search..." style="width:100%;">`;
+  }
+
+  else if (el.type === "embed") {
+    d.innerHTML = el.html || "";
+  }
+
+  else {
+    d.innerHTML = "Unknown element";
+  }
+
+  document.body.appendChild(d);
 });
 </script>
+
+</body>
+</html>
