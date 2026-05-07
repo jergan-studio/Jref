@@ -39,7 +39,6 @@ button:hover {
   background: #d9a9bf;
 }
 
-/* popup */
 #panel {
   display: none;
   position: fixed;
@@ -50,16 +49,8 @@ button:hover {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  z-index: 999;
   width: 300px;
 }
-
-#panel input {
-  width: 100%;
-  margin: 5px 0;
-  background: #f2f2f2;
-}
-
 </style>
 </head>
 
@@ -67,17 +58,20 @@ button:hover {
 
 <div class="title">Jref</div>
 
-<!-- SEARCH BAR -->
+<!-- SEARCH -->
 <input id="search" placeholder="Search or shortcut (yt, gh, gd)">
 <br>
 
-<!-- DEFAULT SHORTCUTS -->
+<!-- DEFAULT BUTTONS -->
 <button onclick="quick('yt')">YouTube</button>
 <button onclick="quick('gh')">GitHub</button>
 <button onclick="openAI()">Giznoz AI</button>
 
-<!-- ADD SHORTCUT BUTTON -->
+<!-- ADD -->
 <button onclick="togglePanel()">＋ Add Shortcut</button>
+
+<!-- DYNAMIC BUTTON AREA -->
+<div id="customButtons"></div>
 
 <!-- POPUP -->
 <div id="panel">
@@ -93,31 +87,42 @@ button:hover {
 </div>
 
 <script>
-/* default shortcuts */
+/* DEFAULT */
 let shortcuts = {
   yt: "https://youtube.com",
   gh: "https://github.com",
   ai: "https://gizno-ai.vercel.app/"
 };
 
-/* load saved shortcuts */
-const saved = JSON.parse(localStorage.getItem("jref_shortcuts") || "{}");
-shortcuts = {...shortcuts, ...saved};
+/* LOAD SAVED */
+let saved = JSON.parse(localStorage.getItem("jref_shortcuts") || "{}");
+shortcuts = { ...shortcuts, ...saved };
 
-/* search system */
+/* IMPORTANT: renders buttons */
+function renderButtons() {
+  const box = document.getElementById("customButtons");
+  box.innerHTML = "";
+
+  Object.keys(saved).forEach(key => {
+    const btn = document.createElement("button");
+    btn.innerText = key;
+    btn.onclick = () => location.href = saved[key];
+    box.appendChild(btn);
+  });
+}
+
+renderButtons();
+
+/* SEARCH → results.html FIX */
 document.getElementById("search").addEventListener("keydown", e => {
   if (e.key === "Enter") {
     const q = e.target.value.trim();
 
-    if (shortcuts[q]) {
-      location.href = shortcuts[q];
-    } else {
-      location.href = "https://www.google.com/search?q=" + encodeURIComponent(q);
-    }
+    location.href = "results.html?q=" + encodeURIComponent(q);
   }
 });
 
-/* quick buttons */
+/* QUICK */
 function quick(key) {
   location.href = shortcuts[key];
 }
@@ -127,13 +132,13 @@ function openAI() {
   location.href = shortcuts.ai;
 }
 
-/* toggle popup */
+/* TOGGLE PANEL */
 function togglePanel() {
   const p = document.getElementById("panel");
-  p.style.display = (p.style.display === "block") ? "none" : "block";
+  p.style.display = p.style.display === "block" ? "none" : "block";
 }
 
-/* add shortcut */
+/* ADD SHORTCUT */
 function addShortcut() {
   const name = document.getElementById("name").value.trim();
   const url = document.getElementById("url").value.trim();
@@ -141,14 +146,12 @@ function addShortcut() {
   if (!name || !url) return alert("Fill both fields");
 
   saved[name] = url;
+
   localStorage.setItem("jref_shortcuts", JSON.stringify(saved));
 
-  shortcuts[name] = url;
+  renderButtons(); // 🔥 FIX: instantly show new button
 
-  alert("Shortcut added: " + name);
-
-  document.getElementById("name").value = "";
-  document.getElementById("url").value = "";
+  alert("Saved: " + name);
 
   togglePanel();
 }
