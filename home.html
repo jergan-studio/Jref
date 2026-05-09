@@ -49,7 +49,18 @@ button:hover {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  width: 300px;
+  width: 320px;
+}
+
+.shortcutBox {
+  display: inline-flex;
+  align-items: center;
+  margin: 5px;
+}
+
+.deleteBtn {
+  background: #ff8080;
+  padding: 8px;
 }
 </style>
 </head>
@@ -59,7 +70,7 @@ button:hover {
 <div class="title">Jref</div>
 
 <!-- SEARCH -->
-<input id="search" placeholder="Search or shortcut (yt, gh, gd)">
+<input id="search" placeholder="Search or shortcut">
 <br>
 
 <!-- DEFAULT BUTTONS -->
@@ -70,7 +81,9 @@ button:hover {
 <!-- ADD -->
 <button onclick="togglePanel()">＋ Add Shortcut</button>
 
-<!-- DYNAMIC BUTTON AREA -->
+<br><br>
+
+<!-- CUSTOM SHORTCUTS -->
 <div id="customButtons"></div>
 
 <!-- POPUP -->
@@ -78,8 +91,10 @@ button:hover {
 
 <h3>Add Shortcut</h3>
 
-<input id="name" placeholder="name (gd)">
+<input id="name" placeholder="shortcut name (gd)">
 <input id="url" placeholder="https://example.com">
+
+<br><br>
 
 <button onclick="addShortcut()">Save</button>
 <button onclick="togglePanel()">Close</button>
@@ -96,29 +111,65 @@ let shortcuts = {
 
 /* LOAD SAVED */
 let saved = JSON.parse(localStorage.getItem("jref_shortcuts") || "{}");
+
 shortcuts = { ...shortcuts, ...saved };
 
-/* IMPORTANT: renders buttons */
+/* RENDER BUTTONS */
 function renderButtons() {
+
   const box = document.getElementById("customButtons");
+
   box.innerHTML = "";
 
   Object.keys(saved).forEach(key => {
+
+    const wrap = document.createElement("div");
+    wrap.className = "shortcutBox";
+
+    /* shortcut button */
     const btn = document.createElement("button");
     btn.innerText = key;
-    btn.onclick = () => location.href = saved[key];
-    box.appendChild(btn);
+
+    btn.onclick = () => {
+      location.href = saved[key];
+    };
+
+    /* delete button */
+    const del = document.createElement("button");
+    del.innerText = "✕";
+    del.className = "deleteBtn";
+
+    del.onclick = () => {
+
+      delete saved[key];
+
+      localStorage.setItem(
+        "jref_shortcuts",
+        JSON.stringify(saved)
+      );
+
+      renderButtons();
+    };
+
+    wrap.appendChild(btn);
+    wrap.appendChild(del);
+
+    box.appendChild(wrap);
   });
 }
 
 renderButtons();
 
-/* SEARCH → results.html FIX */
+/* SEARCH */
 document.getElementById("search").addEventListener("keydown", e => {
+
   if (e.key === "Enter") {
+
     const q = e.target.value.trim();
 
-    location.href = "results.html?q=" + encodeURIComponent(q);
+    location.href =
+      "results.html?q=" +
+      encodeURIComponent(q);
   }
 });
 
@@ -132,26 +183,46 @@ function openAI() {
   location.href = shortcuts.ai;
 }
 
-/* TOGGLE PANEL */
+/* PANEL */
 function togglePanel() {
+
   const p = document.getElementById("panel");
-  p.style.display = p.style.display === "block" ? "none" : "block";
+
+  p.style.display =
+    p.style.display === "block"
+    ? "none"
+    : "block";
 }
 
 /* ADD SHORTCUT */
 function addShortcut() {
-  const name = document.getElementById("name").value.trim();
-  const url = document.getElementById("url").value.trim();
 
-  if (!name || !url) return alert("Fill both fields");
+  const name =
+    document.getElementById("name")
+    .value
+    .trim();
+
+  const url =
+    document.getElementById("url")
+    .value
+    .trim();
+
+  if (!name || !url) {
+    alert("Fill both fields");
+    return;
+  }
 
   saved[name] = url;
 
-  localStorage.setItem("jref_shortcuts", JSON.stringify(saved));
+  localStorage.setItem(
+    "jref_shortcuts",
+    JSON.stringify(saved)
+  );
 
-  renderButtons(); // 🔥 FIX: instantly show new button
+  renderButtons();
 
-  alert("Saved: " + name);
+  document.getElementById("name").value = "";
+  document.getElementById("url").value = "";
 
   togglePanel();
 }
