@@ -4,14 +4,16 @@
 <title>Jref</title>
 
 <style>
-/* ===== MICA STYLE VARIABLES ===== */
+
+/* ===== THEME VARIABLES ===== */
 :root{
-  --bg: rgba(240,240,240,0.75);
+  --bg:#ffffff;         /* REAL WHITE FIX */
   --text:#000;
-  --box: rgba(230,195,211,0.7);
-  --panel: rgba(255,255,255,0.6);
+  --box:#e6c3d3;
+  --panel:#ffffff;
 }
 
+/* DARK / MICA MODE */
 body.dark{
   --bg: rgba(20,20,20,0.55);
   --text:#fff;
@@ -26,11 +28,13 @@ body{
   margin:0;
   color:var(--text);
   background:var(--bg);
+  transition:0.2s;
+}
 
+/* ONLY BLUR IN DARK MODE (IMPORTANT FIX) */
+body.dark{
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
-
-  transition:0.2s;
 }
 
 .title{
@@ -65,7 +69,7 @@ button:hover{
   opacity:0.85;
 }
 
-/* ===== POPUP PANEL ===== */
+/* ===== POPUP ===== */
 #panel{
   display:none;
   position:fixed;
@@ -80,6 +84,8 @@ button:hover{
   padding:20px;
   border-radius:12px;
   width:320px;
+
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
 }
 
 /* ===== SHORTCUTS ===== */
@@ -147,7 +153,7 @@ JSON.parse(localStorage.getItem("jref_shortcuts") || "{}");
 
 shortcuts = {...shortcuts, ...saved};
 
-/* ===== RENDER SHORTCUT BUTTONS ===== */
+/* ===== RENDER SHORTCUTS ===== */
 function renderButtons(){
 
   const box =
@@ -260,7 +266,7 @@ function addShortcut(){
   togglePanel();
 }
 
-/* ===== DARK MODE (WINDHAWK MICA FRIENDLY) ===== */
+/* ===== DARK MODE FIXED ===== */
 function toggleDark(){
   document.body.classList.toggle("dark");
 
@@ -270,7 +276,7 @@ function toggleDark(){
   );
 }
 
-/* auto-load theme */
+/* auto-load dark mode */
 if(localStorage.getItem("jref_dark")==="true"){
   document.body.classList.add("dark");
 }
