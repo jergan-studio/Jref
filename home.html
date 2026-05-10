@@ -4,63 +4,93 @@
 <title>Jref</title>
 
 <style>
-body {
+/* ===== MICA STYLE VARIABLES ===== */
+:root{
+  --bg: rgba(240,240,240,0.75);
+  --text:#000;
+  --box: rgba(230,195,211,0.7);
+  --panel: rgba(255,255,255,0.6);
+}
+
+body.dark{
+  --bg: rgba(20,20,20,0.55);
+  --text:#fff;
+  --box: rgba(40,40,40,0.6);
+  --panel: rgba(30,30,30,0.55);
+}
+
+/* ===== BASE ===== */
+body{
   font-family: Arial;
-  text-align: center;
-  background: #e9e9e9;
-  margin: 0;
+  text-align:center;
+  margin:0;
+  color:var(--text);
+  background:var(--bg);
+
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+
+  transition:0.2s;
 }
 
-.title {
-  font-size: 60px;
-  margin-top: 80px;
+.title{
+  font-size:60px;
+  margin-top:80px;
 }
 
-input {
-  padding: 10px;
-  width: 50%;
-  border-radius: 20px;
-  border: none;
-  background: #e6c3d3;
-  margin: 5px;
-  outline: none;
+/* ===== INPUTS ===== */
+input{
+  padding:10px;
+  width:50%;
+  border-radius:20px;
+  border:none;
+  background:var(--box);
+  color:var(--text);
+  margin:5px;
+  outline:none;
 }
 
-button {
-  margin: 5px;
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-  background: #e6c3d3;
-  cursor: pointer;
+/* ===== BUTTONS ===== */
+button{
+  margin:5px;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:var(--box);
+  color:var(--text);
+  cursor:pointer;
 }
 
-button:hover {
-  background: #d9a9bf;
+button:hover{
+  opacity:0.85;
 }
 
-#panel {
-  display: none;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  width: 320px;
+/* ===== POPUP PANEL ===== */
+#panel{
+  display:none;
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:var(--panel);
+
+  backdrop-filter: blur(35px);
+  -webkit-backdrop-filter: blur(35px);
+
+  padding:20px;
+  border-radius:12px;
+  width:320px;
 }
 
-.shortcutBox {
-  display: inline-flex;
-  align-items: center;
-  margin: 5px;
+/* ===== SHORTCUTS ===== */
+.shortcutBox{
+  display:inline-flex;
+  align-items:center;
+  margin:5px;
 }
 
-.deleteBtn {
-  background: #ff8080;
-  padding: 8px;
+.deleteBtn{
+  background:#ff6b6b;
 }
 </style>
 </head>
@@ -70,7 +100,7 @@ button:hover {
 <div class="title">Jref</div>
 
 <!-- SEARCH -->
-<input id="search" placeholder="Search or shortcut">
+<input id="search" placeholder="Search or shortcut (yt, gh)">
 <br>
 
 <!-- DEFAULT BUTTONS -->
@@ -78,7 +108,8 @@ button:hover {
 <button onclick="quick('gh')">GitHub</button>
 <button onclick="openAI()">Giznoz AI</button>
 
-<!-- ADD -->
+<!-- TOGGLES -->
+<button onclick="toggleDark()">🌙 Dark Mode</button>
 <button onclick="togglePanel()">＋ Add Shortcut</button>
 
 <br><br>
@@ -91,7 +122,7 @@ button:hover {
 
 <h3>Add Shortcut</h3>
 
-<input id="name" placeholder="shortcut name (gd)">
+<input id="name" placeholder="name (gd)">
 <input id="url" placeholder="https://example.com">
 
 <br><br>
@@ -102,44 +133,45 @@ button:hover {
 </div>
 
 <script>
-/* DEFAULT */
+
+/* ===== DEFAULT SHORTCUTS ===== */
 let shortcuts = {
-  yt: "https://youtube.com",
-  gh: "https://github.com",
-  ai: "https://gizno-ai.vercel.app/"
+  yt:"https://youtube.com",
+  gh:"https://github.com",
+  ai:"https://gizno-ai.vercel.app/"
 };
 
-/* LOAD SAVED */
-let saved = JSON.parse(localStorage.getItem("jref_shortcuts") || "{}");
+/* ===== LOAD SAVED ===== */
+let saved =
+JSON.parse(localStorage.getItem("jref_shortcuts") || "{}");
 
-shortcuts = { ...shortcuts, ...saved };
+shortcuts = {...shortcuts, ...saved};
 
-/* RENDER BUTTONS */
-function renderButtons() {
+/* ===== RENDER SHORTCUT BUTTONS ===== */
+function renderButtons(){
 
-  const box = document.getElementById("customButtons");
+  const box =
+  document.getElementById("customButtons");
 
   box.innerHTML = "";
 
-  Object.keys(saved).forEach(key => {
+  Object.keys(saved).forEach(key=>{
 
     const wrap = document.createElement("div");
     wrap.className = "shortcutBox";
 
-    /* shortcut button */
     const btn = document.createElement("button");
     btn.innerText = key;
 
-    btn.onclick = () => {
+    btn.onclick = ()=>{
       location.href = saved[key];
     };
 
-    /* delete button */
     const del = document.createElement("button");
     del.innerText = "✕";
     del.className = "deleteBtn";
 
-    del.onclick = () => {
+    del.onclick = ()=>{
 
       delete saved[key];
 
@@ -160,54 +192,55 @@ function renderButtons() {
 
 renderButtons();
 
-/* SEARCH */
-document.getElementById("search").addEventListener("keydown", e => {
+/* ===== SEARCH ===== */
+document.getElementById("search")
+.addEventListener("keydown",e=>{
 
-  if (e.key === "Enter") {
+  if(e.key==="Enter"){
 
-    const q = e.target.value.trim();
+    const q =
+    e.target.value.trim();
 
     location.href =
-      "results.html?q=" +
-      encodeURIComponent(q);
+    "results.html?q=" +
+    encodeURIComponent(q);
   }
 });
 
-/* QUICK */
-function quick(key) {
+/* ===== QUICK ===== */
+function quick(key){
   location.href = shortcuts[key];
 }
 
-/* AI */
-function openAI() {
+/* ===== AI ===== */
+function openAI(){
   location.href = shortcuts.ai;
 }
 
-/* PANEL */
-function togglePanel() {
+/* ===== PANEL ===== */
+function togglePanel(){
 
-  const p = document.getElementById("panel");
+  const p =
+  document.getElementById("panel");
 
   p.style.display =
-    p.style.display === "block"
-    ? "none"
-    : "block";
+  p.style.display === "block"
+  ? "none"
+  : "block";
 }
 
-/* ADD SHORTCUT */
-function addShortcut() {
+/* ===== ADD SHORTCUT ===== */
+function addShortcut(){
 
   const name =
-    document.getElementById("name")
-    .value
-    .trim();
+  document.getElementById("name")
+  .value.trim();
 
   const url =
-    document.getElementById("url")
-    .value
-    .trim();
+  document.getElementById("url")
+  .value.trim();
 
-  if (!name || !url) {
+  if(!name || !url){
     alert("Fill both fields");
     return;
   }
@@ -221,11 +254,27 @@ function addShortcut() {
 
   renderButtons();
 
-  document.getElementById("name").value = "";
-  document.getElementById("url").value = "";
+  document.getElementById("name").value="";
+  document.getElementById("url").value="";
 
   togglePanel();
 }
+
+/* ===== DARK MODE (WINDHAWK MICA FRIENDLY) ===== */
+function toggleDark(){
+  document.body.classList.toggle("dark");
+
+  localStorage.setItem(
+    "jref_dark",
+    document.body.classList.contains("dark")
+  );
+}
+
+/* auto-load theme */
+if(localStorage.getItem("jref_dark")==="true"){
+  document.body.classList.add("dark");
+}
+
 </script>
 
 </body>
