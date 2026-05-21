@@ -1,97 +1,155 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Results - Jref</title>
+<title>JREF Results</title>
 
 <style>
 body {
+  margin: 0;
   font-family: Arial;
   background: #e9e9e9;
-  padding: 20px;
 }
 
+/* layout */
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+/* left panel (results) */
+.left {
+  width: 40%;
+  overflow-y: auto;
+  padding: 15px;
+  background: #f5f5f5;
+}
+
+/* right panel (embed browser) */
+.right {
+  width: 60%;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+}
+
+/* iframe browser */
+iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: white;
+}
+
+/* results */
 .result {
   background: white;
   margin: 10px 0;
-  padding: 15px;
+  padding: 12px;
   border-radius: 10px;
-  animation: fadeIn 0.3s ease;
-}
-
-a {
-  font-size: 20px;
-  text-decoration: none;
-  color: black;
   cursor: pointer;
+  transition: 0.2s;
 }
 
-p {
-  color: #444;
+.result:hover {
+  transform: scale(1.02);
 }
 
-.suggestions {
-  margin: 15px 0;
-}
-
-.suggestion {
-  background: #dff1ff;
-  padding: 10px;
-  margin: 5px 0;
-  border-radius: 8px;
-}
-
-.suggestion a {
+.result a {
   font-size: 18px;
-  color: #0077ff;
+  color: black;
+  text-decoration: none;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* top bar */
+.topbar {
+  padding: 10px;
+  background: #222;
+  color: white;
+  font-size: 14px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: none;
 }
 </style>
 </head>
 
 <body>
 
-<h2 id="title"></h2>
+<div class="container">
 
-<div class="suggestions" id="suggestions"></div>
-<div id="results">Loading...</div>
+  <!-- LEFT: results -->
+  <div class="left">
+
+    <h3 id="title">Results</h3>
+
+    <div id="results">Loading...</div>
+
+  </div>
+
+  <!-- RIGHT: embed browser -->
+  <div class="right">
+
+    <div class="topbar">
+      🌐 JREF Embed Viewer
+      <input id="urlbar" placeholder="Enter URL..." onkeydown="if(event.key==='Enter') loadURL(this.value)">
+    </div>
+
+    <iframe id="viewer" src="about:blank"></iframe>
+
+  </div>
+
+</div>
 
 <script>
 const params = new URLSearchParams(window.location.search);
-const query = (params.get("q") || "").toLowerCase();
+const query = params.get("q");
 
 document.getElementById("title").innerText = "Results for: " + query;
 
 const box = document.getElementById("results");
-const sugg = document.getElementById("suggestions");
+const viewer = document.getElementById("viewer");
 
 /* -----------------------------
-   DOMAIN GUESSING (.com etc)
+   LOAD WEBSITE IN EMBED PANEL
 ------------------------------ */
+function loadURL(url) {
+  if (!url) return;
 
-function makeDomainLinks(q) {
-  const clean = q.replace(/[^a-z0-9]/g, "").trim();
-  const tlds = [".com", ".org", ".fun", ".ink"];
+  if (!url.startsWith("http")) {
+    url = "https://" + url;
+  }
 
-  return tlds.map(tld => ({
-    name: clean + tld,
-    url: "https://www." + clean + tld
-  }));
+  viewer.src = url;
 }
 
-// show guessed domains
-const guesses = makeDomainLinks(query);
-guesses.forEach(g => {
-  sugg.innerHTML += `
-    <div class="suggestion">
-      <a href="${g.url}">${g.name}</a>
-    </div>
-  `;
-});
+/* -----------------------------
+   DOMAIN GUESSING
+------------------------------ */
+function guessDomains(q) {
+  const clean = q.replace(/[^a-z0-9]/gi, "");
+  return [
+    clean + ".com",
+    clean + ".org",
+    clean + ".fun",
+    clean + ".ink"
+  ];
+}
 
+const guesses = guessDomains(query);
+
+/* show quick domain buttons */
+guesses.forEach(domain => {
+  const div = document.createElement("div");
+  div.className = "result";
+  div.innerHTML = `<b>${domain}</b>`;
+  div.onclick = () => loadURL(domain);
+  box.appendChild(div);
+});
 
 /* -----------------------------
    DUCKDUCKGO SEARCH
@@ -101,64 +159,27 @@ fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no
   .then(res => res.json())
   .then(data => {
 
-    box.innerHTML = "";
-
-    let found = false;
-
-    // main result
     if (data.AbstractText) {
-      found = true;
-      box.innerHTML += `
-        <div class="result">
-          <a href="${data.AbstractURL || '#'}">
-            ${data.Heading || query}
-          </a>
-          <p>${data.AbstractText}</p>
-        </div>
-      `;
+      const div = document.createElement("div");
+      div.className = "result";
+      div.innerHTML = `<b>${data.Heading}</b><p>${data.AbstractText}</p>`;
+      div.onclick = () => loadURL(data.AbstractURL);
+      box.appendChild(div);
     }
 
-    // related results
     if (data.RelatedTopics) {
       data.RelatedTopics.forEach(item => {
         if (item.Text && item.FirstURL) {
-          found = true;
-          box.innerHTML += `
-            <div class="result">
-              <a href="${item.FirstURL}">
-                ${item.Text.split(" - ")[0]}
-              </a>
-              <p>${item.Text}</p>
-            </div>
-          `;
+          const div = document.createElement("div");
+          div.className = "result";
+          div.innerHTML = `<b>${item.Text.split(" - ")[0]}</b>`;
+          div.onclick = () => loadURL(item.FirstURL);
+          box.appendChild(div);
         }
       });
     }
 
-    if (!found) {
-      box.innerHTML = `
-        <p>No results found, but try the suggested sites above.</p>
-      `;
-    }
-
-  })
-  .catch(err => {
-    box.innerHTML = "<p>Error loading results.</p>";
-    console.error(err);
   });
-
-/* -----------------------------
-   FORCE SAME-TAB NAVIGATION
-   (extra safety)
------------------------------- */
-
-document.addEventListener("click", (e) => {
-  const a = e.target.closest("a");
-  if (!a) return;
-
-  e.preventDefault();
-  window.location.href = a.href;
-});
 
 </script>
 
