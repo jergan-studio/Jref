@@ -15,7 +15,7 @@ body {
   height: 100vh;
 }
 
-/* LEFT PANEL */
+/* LEFT */
 .left {
   width: 40%;
   overflow-y: auto;
@@ -23,7 +23,7 @@ body {
   background: #f5f5f5;
 }
 
-/* RIGHT PANEL */
+/* RIGHT */
 .right {
   width: 60%;
   background: #111;
@@ -36,7 +36,7 @@ iframe {
   background: white;
 }
 
-/* RESULT CARD */
+/* result card */
 .result {
   background: white;
   margin: 10px 0;
@@ -51,8 +51,8 @@ iframe {
 }
 
 a {
-  color: #2563eb;
   text-decoration: none;
+  color: #2563eb;
   font-weight: bold;
 }
 </style>
@@ -64,7 +64,7 @@ a {
 
   <div class="left">
     <h3 id="title"></h3>
-    <div id="results">Loading...</div>
+    <div id="results"></div>
   </div>
 
   <div class="right">
@@ -86,9 +86,9 @@ function openSite(url) {
 }
 
 /* -----------------------------
-   URL GUESS SYSTEM (.com etc)
+   URL GUESS SYSTEM
 ------------------------------ */
-function makeGuessLinks(q) {
+function generateUrls(q) {
   const clean = q.toLowerCase().replace(/[^a-z0-9]/g, "");
 
   return [
@@ -100,58 +100,33 @@ function makeGuessLinks(q) {
 }
 
 /* -----------------------------
-   DUCKDUCKGO LITE SEARCH
-   (THIS IS THE FIX THAT WORKS)
+   BUILD FAKE + SMART RESULTS
+   (STABLE REPLACEMENT FOR DUCKDUCKGO)
 ------------------------------ */
 
-fetch("https://duckduckgo.com/lite/?q=" + encodeURIComponent(query))
-  .then(res => res.text())
-  .then(html => {
+const results = [
+  {
+    title: "🔎 Search in JREF AI",
+    url: "https://jref-ai.vercel.app/?q=" + encodeURIComponent(query)
+  },
+  {
+    title: "🌐 Open direct search page",
+    url: "https://duckduckgo.com/?q=" + encodeURIComponent(query)
+  },
+  ...generateUrls(query)
+];
 
-    const doc = new DOMParser().parseFromString(html, "text/html");
+/* render results */
+results.forEach(r => {
+  const div = document.createElement("div");
+  div.className = "result";
 
-    const links = doc.querySelectorAll("a.result-link");
+  div.innerHTML = `<a href="#">${r.title}</a>`;
 
-    box.innerHTML = "";
+  div.onclick = () => openSite(r.url);
 
-    /* 1. AI-style JREF link */
-    const jref = document.createElement("div");
-    jref.className = "result";
-    jref.innerHTML = `<a href="#">🔎 Search in JREF AI</a>`;
-    jref.onclick = () => openSite("https://jref-ai.vercel.app/?q=" + encodeURIComponent(query));
-    box.appendChild(jref);
-
-    /* 2. DuckDuckGo results */
-    links.forEach(link => {
-      const div = document.createElement("div");
-      div.className = "result";
-
-      div.innerHTML = `<a href="${link.href}">${link.innerText}</a>`;
-
-      div.onclick = () => openSite(link.href);
-
-      box.appendChild(div);
-    });
-
-    /* 3. URL GUESS RESULTS */
-    const guesses = makeGuessLinks(query);
-
-    guesses.forEach(g => {
-      const div = document.createElement("div");
-      div.className = "result";
-
-      div.innerHTML = `<a href="${g.url}">🌐 ${g.title}</a>`;
-
-      div.onclick = () => openSite(g.url);
-
-      box.appendChild(div);
-    });
-
-  })
-  .catch(err => {
-    box.innerHTML = "<p>Error loading results.</p>";
-    console.error(err);
-  });
+  box.appendChild(div);
+});
 
 </script>
 
