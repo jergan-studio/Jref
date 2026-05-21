@@ -1,136 +1,163 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>JREF Results</title>
 
 <style>
 body {
   margin: 0;
+  background: radial-gradient(circle at top, #111, #000);
+  color: white;
   font-family: Arial;
-  background: #e9e9e9;
 }
 
-.container {
-  display: flex;
-  height: 100vh;
-}
-
-/* LEFT */
-.left {
-  width: 40%;
-  overflow-y: auto;
+header {
   padding: 15px;
-  background: #f5f5f5;
+  display: flex;
+  gap: 10px;
+  border-bottom: 1px solid #222;
+}
+
+header input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 20px;
+  border: none;
+}
+
+header button {
+  padding: 12px 16px;
+  border-radius: 20px;
+  border: none;
+  background: #4f7cff;
+  color: white;
+  cursor: pointer;
+}
+
+.ai {
+  margin: 20px;
+  padding: 15px;
+  border: 1px solid #4f7cff;
+  box-shadow: 0 0 20px #4f7cff;
 }
 
 .result {
-  background: white;
-  margin: 10px 0;
-  padding: 12px;
+  margin: 15px 20px;
+  padding: 15px;
+  background: #141414;
   border-radius: 10px;
   cursor: pointer;
-  transition: 0.2s;
 }
 
 .result:hover {
-  transform: scale(1.02);
-}
-
-/* RIGHT */
-.right {
-  width: 60%;
-  background: #111;
-}
-
-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: white;
+  background: #1f1f1f;
 }
 
 a {
+  color: #4f7cff;
   text-decoration: none;
-  color: #2563eb;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<header>
+  <input id="searchBox" placeholder="Search JREF...">
+  <button onclick="goCom()">.com</button>
+</header>
 
-  <!-- LEFT -->
-  <div class="left">
-    <h3 id="title"></h3>
-    <div id="results"></div>
-  </div>
-
-  <!-- RIGHT -->
-  <div class="right">
-    <iframe id="viewer" src="https://jref-ai.vercel.app/"></iframe>
-  </div>
-
-</div>
+<div class="ai" id="ai"></div>
+<div id="results"></div>
 
 <script>
-const query = new URLSearchParams(window.location.search).get("q") || "";
+const params = new URLSearchParams(location.search);
+const query = params.get("q") || "";
 
-document.getElementById("title").innerText = "Results for: " + query;
+const searchBox = document.getElementById("searchBox");
+const resultsDiv = document.getElementById("results");
+const ai = document.getElementById("ai");
 
-const box = document.getElementById("results");
-const viewer = document.getElementById("viewer");
+searchBox.value = query;
 
-function openSite(url) {
-  viewer.src = url;
+function aiThink() {
+  ai.textContent =
+    `JREF AI: Searching for "${query}" — showing instant web knowledge + suggestions.`;
 }
 
-/* -----------------------------
-   URL GENERATOR SYSTEM
------------------------------- */
-function makeUrls(q) {
-  const clean = q.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-  return [
-    {
-      title: "Search JREF AI → " + q,
-      url: "https://jref-ai.vercel.app/?q=" + encodeURIComponent(q)
-    },
-    {
-      title: clean + ".com",
-      url: "https://" + clean + ".com"
-    },
-    {
-      title: clean + ".org",
-      url: "https://" + clean + ".org"
-    },
-    {
-      title: clean + ".fun",
-      url: "https://" + clean + ".fun"
-    },
-    {
-      title: clean + ".ink",
-      url: "https://" + clean + ".ink"
-    }
-  ];
-}
-
-/* -----------------------------
-   BUILD RESULTS (NO API)
------------------------------- */
-const results = makeUrls(query);
-
-results.forEach(r => {
+function addResult(title, desc, url) {
   const div = document.createElement("div");
   div.className = "result";
 
-  div.innerHTML = `<a href="#">🌐 ${r.title}</a>`;
+  div.innerHTML = `
+    <b>${title}</b><br>
+    <small>${desc}</small><br>
+    <a href="${url}" target="_blank">${url}</a>
+  `;
 
-  div.onclick = () => openSite(r.url);
+  div.onclick = () => {
+    window.location.href = url; // NOT new tab
+  };
 
-  box.appendChild(div);
+  resultsDiv.appendChild(div);
+}
+
+function goCom() {
+  const q = searchBox.value.trim();
+  if (!q) return;
+
+  window.location.href = "https://" + q.replace(/\s+/g, "").toLowerCase() + ".com";
+}
+
+searchBox.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    location.href = "results.html?q=" + encodeURIComponent(searchBox.value);
+  }
 });
 
+async function run() {
+  aiThink();
+
+  const res = await fetch(
+    `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`
+  );
+
+  const data = await res.json();
+
+  // Instant answer
+  if (data.Heading || data.AbstractText) {
+    addResult(
+      data.Heading || query,
+      data.AbstractText || "Instant answer from DuckDuckGo",
+      data.AbstractURL || "https://duckduckgo.com/?q=" + encodeURIComponent(query)
+    );
+  }
+
+  // Related topics
+  if (data.RelatedTopics) {
+    data.RelatedTopics.slice(0, 6).forEach(t => {
+      if (t.FirstURL) {
+        addResult(
+          t.Text?.split(" - ")[0] || "Result",
+          t.Text || "",
+          t.FirstURL
+        );
+      }
+    });
+  }
+
+  // fallback if empty
+  if (!data.Heading && (!data.RelatedTopics || data.RelatedTopics.length === 0)) {
+    addResult(
+      "Search Web",
+      "No instant results found — open full search page",
+      "https://duckduckgo.com/?q=" + encodeURIComponent(query)
+    );
+  }
+}
+
+run();
 </script>
 
 </body>
