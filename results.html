@@ -23,20 +23,6 @@ body {
   background: #f5f5f5;
 }
 
-/* RIGHT */
-.right {
-  width: 60%;
-  background: #111;
-}
-
-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: white;
-}
-
-/* result card */
 .result {
   background: white;
   margin: 10px 0;
@@ -50,10 +36,22 @@ iframe {
   transform: scale(1.02);
 }
 
+/* RIGHT */
+.right {
+  width: 60%;
+  background: #111;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+}
+
 a {
   text-decoration: none;
   color: #2563eb;
-  font-weight: bold;
 }
 </style>
 </head>
@@ -62,11 +60,13 @@ a {
 
 <div class="container">
 
+  <!-- LEFT -->
   <div class="left">
     <h3 id="title"></h3>
     <div id="results"></div>
   </div>
 
+  <!-- RIGHT -->
   <div class="right">
     <iframe id="viewer" src="https://jref-ai.vercel.app/"></iframe>
   </div>
@@ -86,42 +86,45 @@ function openSite(url) {
 }
 
 /* -----------------------------
-   URL GUESS SYSTEM
+   URL GENERATOR SYSTEM
 ------------------------------ */
-function generateUrls(q) {
+function makeUrls(q) {
   const clean = q.toLowerCase().replace(/[^a-z0-9]/g, "");
 
   return [
-    { title: clean + ".com", url: "https://" + clean + ".com" },
-    { title: clean + ".org", url: "https://" + clean + ".org" },
-    { title: clean + ".fun", url: "https://" + clean + ".fun" },
-    { title: clean + ".ink", url: "https://" + clean + ".ink" }
+    {
+      title: "Search JREF AI → " + q,
+      url: "https://jref-ai.vercel.app/?q=" + encodeURIComponent(q)
+    },
+    {
+      title: clean + ".com",
+      url: "https://" + clean + ".com"
+    },
+    {
+      title: clean + ".org",
+      url: "https://" + clean + ".org"
+    },
+    {
+      title: clean + ".fun",
+      url: "https://" + clean + ".fun"
+    },
+    {
+      title: clean + ".ink",
+      url: "https://" + clean + ".ink"
+    }
   ];
 }
 
 /* -----------------------------
-   BUILD FAKE + SMART RESULTS
-   (STABLE REPLACEMENT FOR DUCKDUCKGO)
+   BUILD RESULTS (NO API)
 ------------------------------ */
+const results = makeUrls(query);
 
-const results = [
-  {
-    title: "🔎 Search in JREF AI",
-    url: "https://jref-ai.vercel.app/?q=" + encodeURIComponent(query)
-  },
-  {
-    title: "🌐 Open direct search page",
-    url: "https://duckduckgo.com/?q=" + encodeURIComponent(query)
-  },
-  ...generateUrls(query)
-];
-
-/* render results */
 results.forEach(r => {
   const div = document.createElement("div");
   div.className = "result";
 
-  div.innerHTML = `<a href="#">${r.title}</a>`;
+  div.innerHTML = `<a href="#">🌐 ${r.title}</a>`;
 
   div.onclick = () => openSite(r.url);
 
