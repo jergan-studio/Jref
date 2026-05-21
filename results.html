@@ -16,7 +16,7 @@ body {
   height: 100vh;
 }
 
-/* left panel (results) */
+/* left results */
 .left {
   width: 40%;
   overflow-y: auto;
@@ -24,23 +24,21 @@ body {
   background: #f5f5f5;
 }
 
-/* right panel (embed browser) */
+/* right embed */
 .right {
   width: 60%;
   background: #111;
-  display: flex;
-  flex-direction: column;
 }
 
-/* iframe browser */
+/* iframe */
 iframe {
-  flex: 1;
   width: 100%;
+  height: 100%;
   border: none;
   background: white;
 }
 
-/* results */
+/* result cards */
 .result {
   background: white;
   margin: 10px 0;
@@ -54,26 +52,9 @@ iframe {
   transform: scale(1.02);
 }
 
-.result a {
-  font-size: 18px;
-  color: black;
-  text-decoration: none;
-}
-
-/* top bar */
-.topbar {
-  padding: 10px;
-  background: #222;
-  color: white;
-  font-size: 14px;
-}
-
-input {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  border-radius: 8px;
-  border: none;
+/* title */
+h3 {
+  margin-top: 0;
 }
 </style>
 </head>
@@ -82,32 +63,22 @@ input {
 
 <div class="container">
 
-  <!-- LEFT: results -->
+  <!-- LEFT SIDE -->
   <div class="left">
-
     <h3 id="title">Results</h3>
-
     <div id="results">Loading...</div>
-
   </div>
 
-  <!-- RIGHT: embed browser -->
+  <!-- RIGHT SIDE (EMBED VIEWER) -->
   <div class="right">
-
-    <div class="topbar">
-      🌐 JREF Embed Viewer
-      <input id="urlbar" placeholder="Enter URL..." onkeydown="if(event.key==='Enter') loadURL(this.value)">
-    </div>
-
-    <iframe id="viewer" src="about:blank"></iframe>
-
+    <iframe id="viewer" src="https://jref-ai.vercel.app/"></iframe>
   </div>
 
 </div>
 
 <script>
 const params = new URLSearchParams(window.location.search);
-const query = params.get("q");
+const query = params.get("q") || "";
 
 document.getElementById("title").innerText = "Results for: " + query;
 
@@ -115,70 +86,48 @@ const box = document.getElementById("results");
 const viewer = document.getElementById("viewer");
 
 /* -----------------------------
-   LOAD WEBSITE IN EMBED PANEL
+   OPEN IN EMBED VIEWER
 ------------------------------ */
-function loadURL(url) {
-  if (!url) return;
-
-  if (!url.startsWith("http")) {
-    url = "https://" + url;
-  }
-
+function openSite(url) {
   viewer.src = url;
 }
 
 /* -----------------------------
-   DOMAIN GUESSING
------------------------------- */
-function guessDomains(q) {
-  const clean = q.replace(/[^a-z0-9]/gi, "");
-  return [
-    clean + ".com",
-    clean + ".org",
-    clean + ".fun",
-    clean + ".ink"
-  ];
-}
-
-const guesses = guessDomains(query);
-
-/* show quick domain buttons */
-guesses.forEach(domain => {
-  const div = document.createElement("div");
-  div.className = "result";
-  div.innerHTML = `<b>${domain}</b>`;
-  div.onclick = () => loadURL(domain);
-  box.appendChild(div);
-});
-
-/* -----------------------------
-   DUCKDUCKGO SEARCH
+   REAL SEARCH FIX
+   DuckDuckGo HTML scraping
 ------------------------------ */
 
-fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1`)
-  .then(res => res.json())
-  .then(data => {
+fetch("https://duckduckgo.com/html/?q=" + encodeURIComponent(query))
+  .then(res => res.text())
+  .then(html => {
 
-    if (data.AbstractText) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    const results = doc.querySelectorAll(".result__a");
+
+    box.innerHTML = "";
+
+    if (results.length === 0) {
+      box.innerHTML = "<p>No results found.</p>";
+      return;
+    }
+
+    results.forEach(link => {
       const div = document.createElement("div");
       div.className = "result";
-      div.innerHTML = `<b>${data.Heading}</b><p>${data.AbstractText}</p>`;
-      div.onclick = () => loadURL(data.AbstractURL);
+
+      div.innerText = link.innerText;
+
+      div.onclick = () => openSite(link.href);
+
       box.appendChild(div);
-    }
+    });
 
-    if (data.RelatedTopics) {
-      data.RelatedTopics.forEach(item => {
-        if (item.Text && item.FirstURL) {
-          const div = document.createElement("div");
-          div.className = "result";
-          div.innerHTML = `<b>${item.Text.split(" - ")[0]}</b>`;
-          div.onclick = () => loadURL(item.FirstURL);
-          box.appendChild(div);
-        }
-      });
-    }
-
+  })
+  .catch(err => {
+    box.innerHTML = "<p>Error loading results.</p>";
+    console.error(err);
   });
 
 </script>
