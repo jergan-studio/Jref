@@ -2,21 +2,31 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>JREF Results</title>
+<title>JREF AI Search</title>
 
 <style>
 body {
   margin: 0;
-  background: radial-gradient(circle at top, #111, #000);
-  color: white;
   font-family: Arial;
+  background: #0b0b0b;
+  color: white;
 }
 
-header {
+/* TOP AI BOX (like Gemini) */
+.aiBox {
+  margin: 15px;
   padding: 15px;
+  border-radius: 12px;
+  background: #121826;
+  border: 1px solid #3b82f6;
+  box-shadow: 0 0 20px #3b82f6;
+}
+
+/* SEARCH BAR */
+header {
   display: flex;
   gap: 10px;
-  border-bottom: 1px solid #222;
+  padding: 10px 15px;
 }
 
 header input {
@@ -24,52 +34,85 @@ header input {
   padding: 12px;
   border-radius: 20px;
   border: none;
+  outline: none;
 }
 
 header button {
   padding: 12px 16px;
   border-radius: 20px;
   border: none;
-  background: #4f7cff;
+  background: #3b82f6;
   color: white;
   cursor: pointer;
 }
 
-.ai {
-  margin: 20px;
-  padding: 15px;
-  border: 1px solid #4f7cff;
-  box-shadow: 0 0 20px #4f7cff;
+/* MAIN LAYOUT */
+.container {
+  display: flex;
+  height: calc(100vh - 140px);
+}
+
+/* RESULTS */
+.left {
+  width: 40%;
+  overflow-y: auto;
+  padding: 10px;
 }
 
 .result {
-  margin: 15px 20px;
-  padding: 15px;
-  background: #141414;
+  background: #151515;
+  margin: 10px 0;
+  padding: 12px;
   border-radius: 10px;
   cursor: pointer;
+  transition: 0.2s;
 }
 
 .result:hover {
-  background: #1f1f1f;
+  background: #222;
 }
 
-a {
-  color: #4f7cff;
+.result a {
+  color: #60a5fa;
   text-decoration: none;
+}
+
+/* EMBED */
+.right {
+  width: 60%;
+  background: #000;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 </style>
 </head>
 
 <body>
 
+<!-- AI BOX (like Gemini) -->
+<div class="aiBox" id="aiBox">
+  JREF AI is ready.
+</div>
+
 <header>
-  <input id="searchBox" placeholder="Search JREF...">
+  <input id="searchBox" placeholder="Search JREF AI...">
+  <button onclick="goSearch()">Search</button>
   <button onclick="goCom()">.com</button>
 </header>
 
-<div class="ai" id="ai"></div>
-<div id="results"></div>
+<div class="container">
+
+  <div class="left" id="results"></div>
+
+  <div class="right">
+    <iframe id="viewer" src="https://jref-ai.vercel.app/"></iframe>
+  </div>
+
+</div>
 
 <script>
 const params = new URLSearchParams(location.search);
@@ -77,87 +120,124 @@ const query = params.get("q") || "";
 
 const searchBox = document.getElementById("searchBox");
 const resultsDiv = document.getElementById("results");
-const ai = document.getElementById("ai");
+const aiBox = document.getElementById("aiBox");
+const viewer = document.getElementById("viewer");
 
 searchBox.value = query;
 
-function aiThink() {
-  ai.textContent =
-    `JREF AI: Searching for "${query}" — showing instant web knowledge + suggestions.`;
+/* ---------------- AI TOP BOX ---------------- */
+function aiThink(q) {
+  aiBox.innerHTML = `
+    <b>JREF AI:</b><br>
+    You searched "<b>${q}</b>".<br>
+    I found web results, instant answers, and possible domains.
+  `;
 }
 
+/* ---------------- LINK SYSTEM (.com etc) ---------------- */
+function makeDomains(q) {
+  const clean = q.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  return [
+    clean + ".com",
+    clean + ".org",
+    clean + ".fun",
+    clean + ".ink"
+  ];
+}
+
+/* ---------------- RESULT CLICK ---------------- */
+function openSite(url) {
+  viewer.src = url;
+}
+
+/* ---------------- RENDER RESULT ---------------- */
 function addResult(title, desc, url) {
   const div = document.createElement("div");
   div.className = "result";
 
   div.innerHTML = `
     <b>${title}</b><br>
-    <small>${desc}</small><br>
-    <a href="${url}" target="_blank">${url}</a>
+    <small>${desc || ""}</small><br>
+    <a href="#">${url}</a>
   `;
 
-  div.onclick = () => {
-    window.location.href = url; // NOT new tab
-  };
+  div.onclick = () => openSite(url);
 
   resultsDiv.appendChild(div);
+}
+
+/* ---------------- SEARCH ---------------- */
+async function run(q) {
+  aiThink(q);
+
+  resultsDiv.innerHTML = "";
+
+  /* 1. JREF AI result */
+  addResult(
+    "JREF AI Answer",
+    "AI-powered search view",
+    "https://jref-ai.vercel.app/?q=" + encodeURIComponent(q)
+  );
+
+  /* 2. DuckDuckGo API (REAL VORD VOID METHOD) */
+  try {
+    const res = await fetch(
+      `https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1`
+    );
+
+    const data = await res.json();
+
+    if (data.Heading || data.AbstractURL) {
+      addResult(
+        data.Heading || q,
+        data.AbstractText || "Instant answer",
+        data.AbstractURL || "https://duckduckgo.com/?q=" + encodeURIComponent(q)
+      );
+    }
+
+    if (data.RelatedTopics) {
+      data.RelatedTopics.slice(0, 5).forEach(t => {
+        if (t.FirstURL) {
+          addResult(
+            t.Text?.split(" - ")[0] || "Result",
+            t.Text || "",
+            t.FirstURL
+          );
+        }
+      });
+    }
+  } catch (e) {
+    console.log("DDG failed");
+  }
+
+  /* 3. .COM SYSTEM (your feature) */
+  makeDomains(q).forEach(d => {
+    addResult(
+      "🌐 " + d,
+      "Generated domain suggestion",
+      "https://" + d
+    );
+  });
+}
+
+/* ---------------- EVENTS ---------------- */
+function goSearch() {
+  const q = searchBox.value.trim();
+  location.href = "?q=" + encodeURIComponent(q);
 }
 
 function goCom() {
   const q = searchBox.value.trim();
   if (!q) return;
-
-  window.location.href = "https://" + q.replace(/\s+/g, "").toLowerCase() + ".com";
+  location.href = "https://" + q.replace(/\s+/g, "").toLowerCase() + ".com";
 }
 
 searchBox.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    location.href = "results.html?q=" + encodeURIComponent(searchBox.value);
-  }
+  if (e.key === "Enter") goSearch();
 });
 
-async function run() {
-  aiThink();
-
-  const res = await fetch(
-    `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`
-  );
-
-  const data = await res.json();
-
-  // Instant answer
-  if (data.Heading || data.AbstractText) {
-    addResult(
-      data.Heading || query,
-      data.AbstractText || "Instant answer from DuckDuckGo",
-      data.AbstractURL || "https://duckduckgo.com/?q=" + encodeURIComponent(query)
-    );
-  }
-
-  // Related topics
-  if (data.RelatedTopics) {
-    data.RelatedTopics.slice(0, 6).forEach(t => {
-      if (t.FirstURL) {
-        addResult(
-          t.Text?.split(" - ")[0] || "Result",
-          t.Text || "",
-          t.FirstURL
-        );
-      }
-    });
-  }
-
-  // fallback if empty
-  if (!data.Heading && (!data.RelatedTopics || data.RelatedTopics.length === 0)) {
-    addResult(
-      "Search Web",
-      "No instant results found — open full search page",
-      "https://duckduckgo.com/?q=" + encodeURIComponent(query)
-    );
-  }
-}
-
-run();
+run(query);
 </script>
 
 </body>
