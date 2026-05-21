@@ -22,10 +22,27 @@ a {
   font-size: 20px;
   text-decoration: none;
   color: black;
+  cursor: pointer;
 }
 
 p {
   color: #444;
+}
+
+.suggestions {
+  margin: 15px 0;
+}
+
+.suggestion {
+  background: #dff1ff;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 8px;
+}
+
+.suggestion a {
+  font-size: 18px;
+  color: #0077ff;
 }
 
 @keyframes fadeIn {
@@ -38,44 +55,79 @@ p {
 <body>
 
 <h2 id="title"></h2>
+
+<div class="suggestions" id="suggestions"></div>
 <div id="results">Loading...</div>
 
 <script>
 const params = new URLSearchParams(window.location.search);
-const query = params.get("q");
+const query = (params.get("q") || "").toLowerCase();
 
 document.getElementById("title").innerText = "Results for: " + query;
 
 const box = document.getElementById("results");
+const sugg = document.getElementById("suggestions");
 
-/* DUCKDUCKGO API SEARCH */
+/* -----------------------------
+   DOMAIN GUESSING (.com etc)
+------------------------------ */
+
+function makeDomainLinks(q) {
+  const clean = q.replace(/[^a-z0-9]/g, "").trim();
+  const tlds = [".com", ".org", ".fun", ".ink"];
+
+  return tlds.map(tld => ({
+    name: clean + tld,
+    url: "https://www." + clean + tld
+  }));
+}
+
+// show guessed domains
+const guesses = makeDomainLinks(query);
+guesses.forEach(g => {
+  sugg.innerHTML += `
+    <div class="suggestion">
+      <a href="${g.url}">${g.name}</a>
+    </div>
+  `;
+});
+
+
+/* -----------------------------
+   DUCKDUCKGO SEARCH
+------------------------------ */
+
 fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1`)
   .then(res => res.json())
   .then(data => {
 
     box.innerHTML = "";
 
-    let hasResults = false;
+    let found = false;
 
-    // Abstract result (main answer)
+    // main result
     if (data.AbstractText) {
-      hasResults = true;
+      found = true;
       box.innerHTML += `
         <div class="result">
-          <a href="${data.AbstractURL}" target="_blank">${data.Heading || query}</a>
+          <a href="${data.AbstractURL || '#'}">
+            ${data.Heading || query}
+          </a>
           <p>${data.AbstractText}</p>
         </div>
       `;
     }
 
-    // Related topics (list results)
-    if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+    // related results
+    if (data.RelatedTopics) {
       data.RelatedTopics.forEach(item => {
         if (item.Text && item.FirstURL) {
-          hasResults = true;
+          found = true;
           box.innerHTML += `
             <div class="result">
-              <a href="${item.FirstURL}" target="_blank">${item.Text.split(" - ")[0]}</a>
+              <a href="${item.FirstURL}">
+                ${item.Text.split(" - ")[0]}
+              </a>
               <p>${item.Text}</p>
             </div>
           `;
@@ -83,16 +135,10 @@ fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no
       });
     }
 
-    // fallback if nothing found
-    if (!hasResults) {
+    if (!found) {
       box.innerHTML = `
-        <p>No results found. Redirecting to DuckDuckGo...</p>
+        <p>No results found, but try the suggested sites above.</p>
       `;
-
-      setTimeout(() => {
-        window.location.href =
-          "https://duckduckgo.com/?q=" + encodeURIComponent(query);
-      }, 1200);
     }
 
   })
@@ -100,6 +146,19 @@ fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no
     box.innerHTML = "<p>Error loading results.</p>";
     console.error(err);
   });
+
+/* -----------------------------
+   FORCE SAME-TAB NAVIGATION
+   (extra safety)
+------------------------------ */
+
+document.addEventListener("click", (e) => {
+  const a = e.target.closest("a");
+  if (!a) return;
+
+  e.preventDefault();
+  window.location.href = a.href;
+});
 
 </script>
 
