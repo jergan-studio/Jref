@@ -24,6 +24,10 @@ a {
   color: black;
 }
 
+p {
+  color: #444;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -34,9 +38,7 @@ a {
 <body>
 
 <h2 id="title"></h2>
-<div id="results"></div>
-
-<script src="data.js"></script>
+<div id="results">Loading...</div>
 
 <script>
 const params = new URLSearchParams(window.location.search);
@@ -44,31 +46,61 @@ const query = params.get("q");
 
 document.getElementById("title").innerText = "Results for: " + query;
 
-/* SEARCH */
-const results = database.filter(item =>
-  item.title.toLowerCase().includes(query.toLowerCase()) ||
-  item.description.toLowerCase().includes(query.toLowerCase())
-);
-
 const box = document.getElementById("results");
 
-if (results.length === 0) {
-  box.innerHTML = "<p>No results. Redirecting...</p>";
+/* DUCKDUCKGO API SEARCH */
+fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1`)
+  .then(res => res.json())
+  .then(data => {
 
-  setTimeout(() => {
-    window.location.href =
-      "https://www.google.com/search?q=" + encodeURIComponent(query);
-  }, 1000);
-} else {
-  results.forEach(r => {
-    box.innerHTML += `
-      <div class="result">
-        <a href="${r.url}" target="_blank">${r.title}</a>
-        <p>${r.description}</p>
-      </div>
-    `;
+    box.innerHTML = "";
+
+    let hasResults = false;
+
+    // Abstract result (main answer)
+    if (data.AbstractText) {
+      hasResults = true;
+      box.innerHTML += `
+        <div class="result">
+          <a href="${data.AbstractURL}" target="_blank">${data.Heading || query}</a>
+          <p>${data.AbstractText}</p>
+        </div>
+      `;
+    }
+
+    // Related topics (list results)
+    if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+      data.RelatedTopics.forEach(item => {
+        if (item.Text && item.FirstURL) {
+          hasResults = true;
+          box.innerHTML += `
+            <div class="result">
+              <a href="${item.FirstURL}" target="_blank">${item.Text.split(" - ")[0]}</a>
+              <p>${item.Text}</p>
+            </div>
+          `;
+        }
+      });
+    }
+
+    // fallback if nothing found
+    if (!hasResults) {
+      box.innerHTML = `
+        <p>No results found. Redirecting to DuckDuckGo...</p>
+      `;
+
+      setTimeout(() => {
+        window.location.href =
+          "https://duckduckgo.com/?q=" + encodeURIComponent(query);
+      }, 1200);
+    }
+
+  })
+  .catch(err => {
+    box.innerHTML = "<p>Error loading results.</p>";
+    console.error(err);
   });
-}
+
 </script>
 
 </body>
