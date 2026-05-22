@@ -2,13 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>JREF Multi Engine Search</title>
+<title>JREF -Results </title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-*{
-  box-sizing:border-box;
-}
+*{box-sizing:border-box;}
 
 body{
   margin:0;
@@ -26,18 +24,10 @@ body{
   background:#121826;
   border-bottom:1px solid #3b82f6;
   padding:12px;
-  box-shadow:0 0 15px rgba(59,130,246,0.4);
 }
 
-.aiTitle{
-  font-weight:bold;
-  color:#60a5fa;
-}
-
-.aiText{
-  font-size:13px;
-  opacity:0.9;
-}
+.aiTitle{color:#60a5fa;font-weight:bold;}
+.aiText{font-size:13px;opacity:0.9;}
 
 /* SEARCH */
 header{
@@ -64,10 +54,9 @@ header button{
   color:white;
   border-radius:999px;
   padding:0 16px;
-  cursor:pointer;
 }
 
-/* LAYOUT */
+/* MAIN */
 .container{
   flex:1;
   display:flex;
@@ -92,7 +81,7 @@ iframe{
   border:none;
 }
 
-/* RESULT BUTTONS */
+/* RESULTS */
 .result{
   width:100%;
   display:block;
@@ -104,59 +93,35 @@ iframe{
   text-align:left;
   color:white;
   cursor:pointer;
-  transition:0.2s;
-  text-decoration:none;
 }
 
 .result:hover{
   background:#202020;
   border-color:#3b82f6;
-  transform:scale(1.01);
 }
 
-.title{
-  font-weight:bold;
-  font-size:15px;
-}
-
-.desc{
-  font-size:12px;
-  opacity:0.7;
-  margin-top:5px;
-}
-
-.link{
-  font-size:11px;
-  color:#60a5fa;
-  margin-top:8px;
-  word-break:break-all;
-}
+.title{font-weight:bold;}
+.desc{font-size:12px;opacity:0.7;margin-top:5px;}
+.link{font-size:11px;color:#60a5fa;margin-top:8px;word-break:break-all;}
 </style>
 </head>
 
 <body>
 
-<!-- AI -->
 <div class="aiBox">
   <div class="aiTitle">🧠 JREF AI</div>
-  <div class="aiText" id="aiText">Ready for multi-engine instant search...</div>
+  <div class="aiText" id="aiText">Ready...</div>
 </div>
 
-<!-- SEARCH -->
 <header>
   <input id="searchBox" placeholder="Search JREF...">
-  <button onclick="openCom()">.com</button>
 </header>
 
-<!-- MAIN -->
 <div class="container">
-
   <div class="left" id="results"></div>
-
   <div class="right">
     <iframe id="viewer" src="https://jref-ai.vercel.app/"></iframe>
   </div>
-
 </div>
 
 <script>
@@ -167,19 +132,16 @@ const aiText = document.getElementById("aiText");
 
 let timeout;
 
+/* READ URL QUERY (FIX #1) */
+const params = new URLSearchParams(location.search);
+const initialQuery = params.get("q") || "";
+
 /* AI TEXT */
 function updateAI(q){
-  aiText.innerHTML = q
-    ? `Searching: <b>${q}</b>`
-    : "Ready for multi-engine instant search...";
+  aiText.innerHTML = q ? `Searching: <b>${q}</b>` : "Ready...";
 }
 
-/* OPEN JREF WINDOW */
-function openNewWindow(url){
-  window.open(url, "_blank", "width=1353,height=761");
-}
-
-/* IFRAME VIEW */
+/* OPEN IN SAME TAB (IFRAME) */
 function openSite(url){
   viewer.src = url;
 }
@@ -187,53 +149,18 @@ function openSite(url){
 /* RESULT BUILDER */
 function addResult(title, desc, url){
 
-  // JREF AI stays iframe button
-  if(title.includes("JREF AI")){
+  const btn = document.createElement("button");
+  btn.className = "result";
 
-    const btn = document.createElement("button");
-    btn.className = "result";
-
-    btn.innerHTML = `
-      <div class="title">${title}</div>
-      <div class="desc">${desc}</div>
-      <div class="link">${url}</div>
-    `;
-
-    btn.onclick = () => openSite(url);
-    resultsDiv.appendChild(btn);
-    return;
-  }
-
-  // NORMAL RESULTS = NEW WINDOW LINKS
-  const a = document.createElement("a");
-  a.className = "result";
-  a.href = "#";
-
-  a.innerHTML = `
+  btn.innerHTML = `
     <div class="title">${title}</div>
     <div class="desc">${desc || ""}</div>
     <div class="link">${url}</div>
   `;
 
-  a.onclick = (e) => {
-    e.preventDefault();
-    openNewWindow(url);
-  };
+  btn.onclick = () => openSite(url);
 
-  resultsDiv.appendChild(a);
-}
-
-/* DOMAINS */
-function makeDomains(q){
-  const clean = q.toLowerCase().replace(/[^a-z0-9]/g,"");
-
-  return [
-    clean + ".com",
-    clean + ".org",
-    clean + ".net",
-    clean + ".ai",
-    clean + ".fun"
-  ];
+  resultsDiv.appendChild(btn);
 }
 
 /* SEARCH ENGINE */
@@ -244,89 +171,14 @@ async function runSearch(q){
 
   updateAI(q);
 
-  /* JREF AI */
-  addResult(
-    "🧠 JREF AI",
-    "AI preview result",
-    "https://jref-ai.vercel.app/?q=" + encodeURIComponent(q)
-  );
+  addResult("🧠 JREF AI","Preview","https://jref-ai.vercel.app/?q="+encodeURIComponent(q));
 
-  /* GOOGLE */
-  addResult(
-    "🔎 Google",
-    "Search Google results",
-    "https://www.google.com/search?q=" + encodeURIComponent(q)
-  );
+  addResult("🔎 Google","Search","https://www.google.com/search?q="+encodeURIComponent(q));
+  addResult("🅱️ Bing","Search","https://www.bing.com/search?q="+encodeURIComponent(q));
+  addResult("🦆 DuckDuckGo","Search","https://duckduckgo.com/?q="+encodeURIComponent(q));
 
-  /* BING */
-  addResult(
-    "🅱️ Bing",
-    "Search Bing results",
-    "https://www.bing.com/search?q=" + encodeURIComponent(q)
-  );
-
-  /* DUCKDUCKGO */
-  addResult(
-    "🦆 DuckDuckGo",
-    "Search DuckDuckGo results",
-    "https://duckduckgo.com/?q=" + encodeURIComponent(q)
-  );
-
-  /* MIT */
-  addResult(
-    "🎓 " + q + ".mit.edu",
-    "Generated academic domain",
-    "https://" + q.replace(/\s+/g,"").toLowerCase() + ".mit.edu"
-  );
-
-  /* VERCEL */
-  addResult(
-    "▲ " + q + ".vercel.app",
-    "Generated deployment domain",
-    "https://" + q.replace(/\s+/g,"").toLowerCase() + ".vercel.app"
-  );
-
-  /* EXTRA DOMAINS */
-  makeDomains(q).forEach(d => {
-    addResult(
-      "🌐 " + d,
-      "Generated domain",
-      "https://" + d
-    );
-  });
-
-  /* DUCKDUCKGO API RESULTS */
-  try{
-
-    const res = await fetch(
-      `https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1&skip_disambig=1`
-    );
-
-    const data = await res.json();
-
-    if(data.AbstractURL){
-      addResult(
-        data.Heading || q,
-        data.AbstractText || "Instant answer",
-        data.AbstractURL
-      );
-    }
-
-    if(data.RelatedTopics){
-      data.RelatedTopics.slice(0,8).forEach(t => {
-        if(t.FirstURL){
-          addResult(
-            t.Text?.split(" - ")[0] || "Result",
-            t.Text || "",
-            t.FirstURL
-          );
-        }
-      });
-    }
-
-  }catch(e){
-    console.log("API failed");
-  }
+  addResult("🎓 "+q+".mit.edu","Generated","https://"+q.replace(/\s+/g,"").toLowerCase()+".mit.edu");
+  addResult("▲ "+q+".vercel.app","Generated","https://"+q.replace(/\s+/g,"").toLowerCase()+".vercel.app");
 
 }
 
@@ -335,26 +187,18 @@ searchBox.addEventListener("input", () => {
   clearTimeout(timeout);
   const q = searchBox.value.trim();
 
-  timeout = setTimeout(() => {
-    runSearch(q);
-  }, 200);
+  timeout = setTimeout(() => runSearch(q), 200);
 });
 
 /* ENTER */
 searchBox.addEventListener("keydown", e => {
-  if(e.key === "Enter"){
-    runSearch(searchBox.value.trim());
-  }
+  if(e.key === "Enter") runSearch(searchBox.value.trim());
 });
 
-/* .COM */
-function openCom(){
-  const q = searchBox.value.trim();
-  if(!q) return;
-
-  openNewWindow(
-    "https://" + q.replace(/\s+/g,"").toLowerCase() + ".com"
-  );
+/* FIX #2: AUTO RUN FROM URL */
+searchBox.value = initialQuery;
+if(initialQuery){
+  runSearch(initialQuery);
 }
 </script>
 
