@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>JREF Instant Search</title>
+<title>JREF Multi Engine Search</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -12,7 +12,7 @@
 
 body{
   margin:0;
-  font-family:Arial,sans-serif;
+  font-family:Arial;
   background:#0b0b0b;
   color:white;
   height:100vh;
@@ -32,7 +32,6 @@ body{
 .aiTitle{
   font-weight:bold;
   color:#60a5fa;
-  margin-bottom:4px;
 }
 
 .aiText{
@@ -57,31 +56,24 @@ header input{
   color:white;
   padding:12px 16px;
   border-radius:999px;
-  font-size:15px;
 }
 
 header button{
-  border:none;
   background:#3b82f6;
+  border:none;
   color:white;
   border-radius:999px;
-  padding:0 18px;
+  padding:0 16px;
   cursor:pointer;
-  transition:0.2s;
 }
 
-header button:hover{
-  background:#2563eb;
-}
-
-/* MAIN */
+/* LAYOUT */
 .container{
   flex:1;
   display:flex;
   overflow:hidden;
 }
 
-/* RESULTS */
 .left{
   width:40%;
   overflow-y:auto;
@@ -89,7 +81,6 @@ header button:hover{
   border-right:1px solid #1f1f1f;
 }
 
-/* VIEWER */
 .right{
   width:60%;
   background:black;
@@ -101,7 +92,7 @@ iframe{
   border:none;
 }
 
-/* RESULT STYLE */
+/* RESULT BUTTONS */
 .result{
   width:100%;
   display:block;
@@ -123,79 +114,47 @@ iframe{
   transform:scale(1.01);
 }
 
-.resultTitle{
-  font-size:15px;
+.title{
   font-weight:bold;
-  margin-bottom:5px;
+  font-size:15px;
 }
 
-.resultDesc{
+.desc{
   font-size:12px;
   opacity:0.7;
-  line-height:1.4;
+  margin-top:5px;
 }
 
-.resultLink{
-  margin-top:8px;
+.link{
   font-size:11px;
   color:#60a5fa;
+  margin-top:8px;
   word-break:break-all;
-}
-
-/* SCROLLBAR */
-::-webkit-scrollbar{
-  width:8px;
-}
-
-::-webkit-scrollbar-thumb{
-  background:#222;
-  border-radius:999px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- AI BAR -->
+<!-- AI -->
 <div class="aiBox">
-
-  <div class="aiTitle">
-    🧠 JREF AI
-  </div>
-
-  <div class="aiText" id="aiText">
-    Ready for instant search...
-  </div>
-
+  <div class="aiTitle">🧠 JREF AI</div>
+  <div class="aiText" id="aiText">Ready for multi-engine instant search...</div>
 </div>
 
 <!-- SEARCH -->
 <header>
-
-  <input
-    id="searchBox"
-    placeholder="Search JREF instantly..."
-    autocomplete="off"
-  >
-
-  <button onclick="openCom()">
-    .com
-  </button>
-
+  <input id="searchBox" placeholder="Search JREF...">
+  <button onclick="openCom()">.com</button>
 </header>
 
 <!-- MAIN -->
 <div class="container">
 
-  <!-- RESULTS -->
   <div class="left" id="results"></div>
 
-  <!-- EMBED -->
   <div class="right">
-    <iframe
-      id="viewer"
-      src="https://jref-ai.vercel.app/"
-    ></iframe>
+    <iframe id="viewer" src="https://jref-ai.vercel.app/"></iframe>
   </div>
 
 </div>
@@ -208,93 +167,65 @@ const aiText = document.getElementById("aiText");
 
 let timeout;
 
-/* OPEN SITE IN IFRAME */
+/* AI TEXT */
+function updateAI(q){
+  aiText.innerHTML = q
+    ? `Searching: <b>${q}</b>`
+    : "Ready for multi-engine instant search...";
+}
+
+/* OPEN JREF WINDOW */
+function openNewWindow(url){
+  window.open(url, "_blank", "width=1353,height=761");
+}
+
+/* IFRAME VIEW */
 function openSite(url){
   viewer.src = url;
 }
 
-/* AI TEXT */
-function updateAI(query){
-
-  if(!query){
-
-    aiText.innerHTML =
-      "Ready for instant search...";
-
-    return;
-  }
-
-  aiText.innerHTML = `
-    Searching instantly for:
-    <b>${query}</b>
-  `;
-}
-
-/* RESULT CREATOR */
+/* RESULT BUILDER */
 function addResult(title, desc, url){
 
-  /* JREF AI BUTTON */
+  // JREF AI stays iframe button
   if(title.includes("JREF AI")){
 
-    const btn =
-      document.createElement("button");
-
+    const btn = document.createElement("button");
     btn.className = "result";
 
     btn.innerHTML = `
-      <div class="resultTitle">
-        ${title}
-      </div>
-
-      <div class="resultDesc">
-        ${desc || ""}
-      </div>
-
-      <div class="resultLink">
-        ${url}
-      </div>
+      <div class="title">${title}</div>
+      <div class="desc">${desc}</div>
+      <div class="link">${url}</div>
     `;
 
-    btn.onclick = () => {
-      openSite(url);
-    };
-
+    btn.onclick = () => openSite(url);
     resultsDiv.appendChild(btn);
-
     return;
   }
 
-  /* NORMAL RESULTS = LINKS */
-  const link =
-    document.createElement("a");
+  // NORMAL RESULTS = NEW WINDOW LINKS
+  const a = document.createElement("a");
+  a.className = "result";
+  a.href = "#";
 
-  link.className = "result";
-  link.href = url;
-  link.target = "_blank";
-
-  link.innerHTML = `
-    <div class="resultTitle">
-      ${title}
-    </div>
-
-    <div class="resultDesc">
-      ${desc || ""}
-    </div>
-
-    <div class="resultLink">
-      ${url}
-    </div>
+  a.innerHTML = `
+    <div class="title">${title}</div>
+    <div class="desc">${desc || ""}</div>
+    <div class="link">${url}</div>
   `;
 
-  resultsDiv.appendChild(link);
+  a.onclick = (e) => {
+    e.preventDefault();
+    openNewWindow(url);
+  };
+
+  resultsDiv.appendChild(a);
 }
 
 /* DOMAINS */
 function makeDomains(q){
-
-  const clean =
-    q.toLowerCase()
-     .replace(/[^a-z0-9]/g,"");
+  const clean = q.toLowerCase().replace(/[^a-z0-9]/g,"");
 
   return [
     clean + ".com",
@@ -305,147 +236,125 @@ function makeDomains(q){
   ];
 }
 
-/* SEARCH */
-async function runSearch(query){
+/* SEARCH ENGINE */
+async function runSearch(q){
 
   resultsDiv.innerHTML = "";
+  if(!q) return;
 
-  if(!query){
-    return;
-  }
-
-  updateAI(query);
+  updateAI(q);
 
   /* JREF AI */
   addResult(
     "🧠 JREF AI",
-    "AI enhanced search result",
-    "https://jref-ai.vercel.app/?q=" +
-    encodeURIComponent(query)
+    "AI preview result",
+    "https://jref-ai.vercel.app/?q=" + encodeURIComponent(q)
   );
 
-  /* SEARCH LINK */
+  /* GOOGLE */
   addResult(
-    "🔎 Search on DuckDuckGo",
-    "Open external search engine",
-    "https://duckduckgo.com/?q=" +
-    encodeURIComponent(query)
+    "🔎 Google",
+    "Search Google results",
+    "https://www.google.com/search?q=" + encodeURIComponent(q)
   );
 
-  /* API */
+  /* BING */
+  addResult(
+    "🅱️ Bing",
+    "Search Bing results",
+    "https://www.bing.com/search?q=" + encodeURIComponent(q)
+  );
+
+  /* DUCKDUCKGO */
+  addResult(
+    "🦆 DuckDuckGo",
+    "Search DuckDuckGo results",
+    "https://duckduckgo.com/?q=" + encodeURIComponent(q)
+  );
+
+  /* MIT */
+  addResult(
+    "🎓 " + q + ".mit.edu",
+    "Generated academic domain",
+    "https://" + q.replace(/\s+/g,"").toLowerCase() + ".mit.edu"
+  );
+
+  /* VERCEL */
+  addResult(
+    "▲ " + q + ".vercel.app",
+    "Generated deployment domain",
+    "https://" + q.replace(/\s+/g,"").toLowerCase() + ".vercel.app"
+  );
+
+  /* EXTRA DOMAINS */
+  makeDomains(q).forEach(d => {
+    addResult(
+      "🌐 " + d,
+      "Generated domain",
+      "https://" + d
+    );
+  });
+
+  /* DUCKDUCKGO API RESULTS */
   try{
 
     const res = await fetch(
-      `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`
+      `https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1&skip_disambig=1`
     );
 
     const data = await res.json();
 
-    /* MAIN RESULT */
     if(data.AbstractURL){
-
       addResult(
-        data.Heading || query,
+        data.Heading || q,
         data.AbstractText || "Instant answer",
         data.AbstractURL
       );
-
     }
 
-    /* RELATED */
     if(data.RelatedTopics){
-
-      data.RelatedTopics
-      .slice(0,8)
-      .forEach(item => {
-
-        if(item.FirstURL){
-
+      data.RelatedTopics.slice(0,8).forEach(t => {
+        if(t.FirstURL){
           addResult(
-            item.Text?.split(" - ")[0] ||
-            "Result",
-
-            item.Text || "Search result",
-
-            item.FirstURL
+            t.Text?.split(" - ")[0] || "Result",
+            t.Text || "",
+            t.FirstURL
           );
-
         }
-
       });
-
     }
 
-  }catch(err){
-
-    console.log("Search failed");
-
+  }catch(e){
+    console.log("API failed");
   }
-
-  /* DOMAINS */
-  makeDomains(query)
-  .forEach(domain => {
-
-    addResult(
-      "🌐 " + domain,
-      "Generated domain suggestion",
-      "https://" + domain
-    );
-
-  });
 
 }
 
 /* INSTANT SEARCH */
-searchBox.addEventListener(
-  "input",
-  () => {
+searchBox.addEventListener("input", () => {
+  clearTimeout(timeout);
+  const q = searchBox.value.trim();
 
-    clearTimeout(timeout);
-
-    const query =
-      searchBox.value.trim();
-
-    timeout = setTimeout(() => {
-
-      runSearch(query);
-
-    },250);
-
-  }
-);
+  timeout = setTimeout(() => {
+    runSearch(q);
+  }, 200);
+});
 
 /* ENTER */
-searchBox.addEventListener(
-  "keydown",
-  e => {
-
-    if(e.key === "Enter"){
-
-      runSearch(
-        searchBox.value.trim()
-      );
-
-    }
-
+searchBox.addEventListener("keydown", e => {
+  if(e.key === "Enter"){
+    runSearch(searchBox.value.trim());
   }
-);
+});
 
 /* .COM */
 function openCom(){
-
-  const q =
-    searchBox.value.trim();
-
+  const q = searchBox.value.trim();
   if(!q) return;
 
-  openSite(
-    "https://" +
-    q.replace(/\s+/g,"")
-     .toLowerCase() +
-    ".com"
+  openNewWindow(
+    "https://" + q.replace(/\s+/g,"").toLowerCase() + ".com"
   );
-
 }
 </script>
 
