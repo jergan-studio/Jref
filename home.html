@@ -1,55 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jref</title>
 
 <style>
-:root{
-  --bg:#ffffff;
-  --text:#000000;
-  --box:#e6c3d3;
-}
-
 body{
   margin:0;
-  font-family:Arial,sans-serif;
+  font-family:Arial;
   text-align:center;
-  background:var(--bg);
-  color:var(--text);
+  background:#fff;
+  color:#000;
 }
 
 h1{
-  margin-top:80px;
+  margin-top:70px;
   font-size:60px;
 }
 
-#search{
+input{
   width:50%;
   padding:12px;
   border:none;
   border-radius:20px;
-  background:var(--box);
-  font-size:16px;
+  background:#e6c3d3;
+  outline:none;
 }
 
 button{
-  padding:10px 15px;
   margin:5px;
+  padding:10px 15px;
   border:none;
   border-radius:10px;
-  background:var(--box);
+  background:#e6c3d3;
   cursor:pointer;
-  font-size:14px;
 }
 
-button:hover{
-  opacity:0.9;
-}
-
-/* Secret Console */
-
+/* CONSOLE */
 #console{
   display:none;
   position:fixed;
@@ -60,319 +47,153 @@ button:hover{
   height:450px;
   background:#111;
   color:lime;
+  font-family:monospace;
+  text-align:left;
   border-radius:10px;
   padding:10px;
-  text-align:left;
-  font-family:Consolas,monospace;
   box-sizing:border-box;
 }
 
 #log{
   height:390px;
-  overflow-y:auto;
+  overflow:auto;
 }
 
 #cmd{
   width:100%;
   padding:8px;
-  box-sizing:border-box;
   background:#000;
   color:lime;
   border:none;
+  outline:none;
 }
 </style>
 </head>
+
 <body>
 
 <h1>Jref</h1>
 
-<input
-id="search"
-placeholder="Search..."
->
-
+<input id="search" placeholder="Search...">
 <br><br>
 
-<!-- Preset Shortcuts -->
-
-<button onclick="openShortcut('yt')">
-YouTube
-</button>
-
-<button onclick="openShortcut('gh')">
-GitHub
-</button>
-
-<button onclick="openShortcut('giz')">
-Gizno AI
-</button>
+<button onclick="openShortcut('yt')">YouTube</button>
+<button onclick="openShortcut('gh')">GitHub</button>
+<button onclick="openShortcut('giz')">Gizno AI</button>
 
 <script>
 
 /* DATABASE */
-
-let db =
-JSON.parse(
-localStorage.getItem("jref_db") || "{}"
-);
+let db = JSON.parse(localStorage.getItem("jref_db") || "{}");
 
 /* PRESETS */
+if(!db.yt) db.yt = "https://youtube.com";
+if(!db.gh) db.gh = "https://github.com";
+if(!db.giz) db.giz = "https://gizno-ai.vercel.app/";
 
-if(!db.yt){
-  db.yt = "https://youtube.com";
-}
-
-if(!db.gh){
-  db.gh = "https://github.com";
-}
-
-if(!db.giz){
-  db.giz = "https://gizno-ai.vercel.app/";
-}
-
-if(!db.gizno){
-  db.gizno = db.giz;
-}
-
-if(!db["gizno ai"]){
-  db["gizno ai"] = db.giz;
-}
-
-localStorage.setItem(
-  "jref_db",
-  JSON.stringify(db)
-);
+localStorage.setItem("jref_db", JSON.stringify(db));
 
 /* SEARCH */
-
-document
-.getElementById("search")
-.addEventListener("keydown",e=>{
-
-  if(e.key==="Enter"){
-
-    const q =
-    e.target.value.trim();
-
+document.getElementById("search").addEventListener("keydown", e => {
+  if(e.key === "Enter"){
+    const q = e.target.value.trim();
     if(!q) return;
 
-    location.href =
-    "results.html?q=" +
-    encodeURIComponent(q);
-
+    location.href = "results.html?q=" + encodeURIComponent(q);
   }
-
 });
 
-/* OPEN SHORTCUT */
-
+/* SHORTCUT OPEN */
 function openShortcut(key){
-
-  if(db[key]){
-    location.href = db[key];
-  }
-
+  if(db[key]) location.href = db[key];
 }
 
-/* CREATE SECRET CONSOLE */
-
-const consoleBox =
-document.createElement("div");
-
+/* CONSOLE */
+const consoleBox = document.createElement("div");
 consoleBox.id = "console";
 
 consoleBox.innerHTML = `
 <div id="log"></div>
-<input
-id="cmd"
-placeholder="list | add name url | del name">
+<input id="cmd" placeholder="list | add name url | del name">
 `;
 
 document.body.appendChild(consoleBox);
 
-/* TOGGLE */
-
 function toggleConsole(){
-
-  const c =
-  document.getElementById("console");
-
-  c.style.display =
-  c.style.display === "block"
-  ? "none"
-  : "block";
+  const c = document.getElementById("console");
+  c.style.display = (c.style.display === "block") ? "none" : "block";
 }
-
-/* LOG */
 
 function log(msg){
-
-  const box =
-  document.getElementById("log");
-
-  box.innerHTML +=
-  "> " + msg + "<br>";
-
-  box.scrollTop =
-  box.scrollHeight;
+  const box = document.getElementById("log");
+  box.innerHTML += "> " + msg + "<br>";
+  box.scrollTop = box.scrollHeight;
 }
 
-/* SECRET SHORTCUT
-   Shift + Numpad8 + J
-*/
-
-let keypad8Held = false;
-
-document.addEventListener(
-"keydown",
-e=>{
-
-  if(e.code==="Numpad8"){
-    keypad8Held = true;
-  }
-
-  if(
-    e.shiftKey &&
-    keypad8Held &&
-    e.key.toLowerCase()==="j"
-  ){
+/* CTRL + ` TO OPEN CONSOLE */
+document.addEventListener("keydown", e => {
+  if(e.ctrlKey && (e.key === "`" || e.key === "~")){
+    e.preventDefault();
     toggleConsole();
   }
-
-});
-
-document.addEventListener(
-"keyup",
-e=>{
-
-  if(e.code==="Numpad8"){
-    keypad8Held = false;
-  }
-
 });
 
 /* COMMAND INPUT */
-
-document.addEventListener(
-"keydown",
-e=>{
-
-  if(
-    e.target.id==="cmd" &&
-    e.key==="Enter"
-  ){
-
-    const cmd =
-    e.target.value.trim();
-
+document.addEventListener("keydown", e => {
+  if(e.target.id === "cmd" && e.key === "Enter"){
+    const cmd = e.target.value.trim();
     e.target.value = "";
-
-    handleCommand(cmd);
-
+    handle(cmd);
   }
-
 });
 
-/* COMMANDS */
-
-function handleCommand(cmd){
+function handle(cmd){
 
   log(cmd);
 
   /* LIST */
-
-  if(cmd==="list"){
-
-    Object.keys(db)
-    .sort()
-    .forEach(key=>{
-
-      log(
-        key +
-        " → " +
-        db[key]
-      );
-
+  if(cmd === "list"){
+    Object.keys(db).forEach(k => {
+      log(k + " → " + db[k]);
     });
-
     return;
   }
 
   /* DELETE */
-
   if(cmd.startsWith("del ")){
-
-    const key =
-    cmd.substring(4).trim();
-
-    if(!db[key]){
-
-      log(
-        "Not found: " +
-        key
-      );
-
-      return;
-    }
+    const key = cmd.split(" ")[1];
 
     delete db[key];
 
-    localStorage.setItem(
-      "jref_db",
-      JSON.stringify(db)
-    );
+    localStorage.setItem("jref_db", JSON.stringify(db));
 
-    log(
-      "Deleted: " +
-      key
-    );
-
+    log("Deleted: " + key);
     return;
   }
 
-  /* ADD */
-
+  /* ADD (10 SEC TIMER) */
   if(cmd.startsWith("add ")){
 
-    const parts =
-    cmd.split(" ");
-
-    const key =
-    parts[1];
-
-    const url =
-    parts.slice(2).join(" ");
+    const parts = cmd.split(" ");
+    const key = parts[1];
+    const url = parts.slice(2).join(" ");
 
     if(!key || !url){
-
-      log(
-        "Usage: add name url"
-      );
-
+      log("Usage: add name url");
       return;
     }
 
-    let seconds = 10;
+    let t = 10;
 
-    log(
-      "Adding " +
-      key +
-      "..."
-    );
+    log("Adding " + key + " in 10 seconds...");
 
-    const timer =
-    setInterval(()=>{
+    const timer = setInterval(() => {
 
-      log(
-        "⏳ " +
-        seconds +
-        "s remaining"
-      );
+      log("⏳ " + t + "s");
 
-      seconds--;
+      t--;
 
-      if(seconds < 0){
-
+      if(t < 0){
         clearInterval(timer);
 
         db[key] = url;
@@ -382,11 +203,7 @@ function handleCommand(cmd){
           JSON.stringify(db)
         );
 
-        log(
-          "✅ Added " +
-          key
-        );
-
+        log("✅ Added: " + key);
       }
 
     },1000);
@@ -394,9 +211,7 @@ function handleCommand(cmd){
     return;
   }
 
-  log(
-    "Unknown command"
-  );
+  log("Unknown command");
 }
 
 </script>
