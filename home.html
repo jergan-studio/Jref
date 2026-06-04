@@ -10,64 +10,64 @@
   --box:#e6c3d3;
 }
 
-body.dark{
-  --bg: rgba(20,20,20,0.6);
-  --text:#fff;
-  --box: rgba(40,40,40,0.6);
-}
-
 body{
-  font-family: Arial;
+  font-family:Arial,sans-serif;
   text-align:center;
-  margin:0;
   background:var(--bg);
   color:var(--text);
+  margin:0;
+}
+
+h1{
+  margin-top:80px;
+  font-size:60px;
 }
 
 input{
-  padding:10px;
+  padding:12px;
   width:50%;
-  border-radius:20px;
   border:none;
+  border-radius:20px;
   background:var(--box);
-  margin:5px;
 }
 
 button{
+  padding:10px 15px;
   margin:5px;
-  padding:10px;
   border:none;
   border-radius:10px;
   background:var(--box);
   cursor:pointer;
 }
 
-/* console */
 #console{
   display:none;
   position:fixed;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  width:600px;
-  height:400px;
-  background:rgba(0,0,0,0.9);
+  width:650px;
+  height:420px;
+  background:#111;
   color:lime;
-  font-family:monospace;
-  padding:10px;
   border-radius:10px;
+  padding:10px;
+  text-align:left;
+  font-family:monospace;
 }
 
 #log{
-  height:330px;
+  height:360px;
   overflow:auto;
 }
 
 #cmd{
   width:100%;
-  background:black;
+  background:#000;
   color:lime;
   border:none;
+  padding:8px;
+  box-sizing:border-box;
 }
 </style>
 </head>
@@ -76,106 +76,195 @@ button{
 
 <h1>Jref</h1>
 
-<input id="search" placeholder="Search...">
-<br>
+<input id="search" placeholder="Search Jref...">
 
-<button onclick="go('yt')">YouTube</button>
-<button onclick="go('gh')">GitHub</button>
+<br><br>
 
-<button onclick="toggleConsole()">🖥 Console</button>
-
-<!-- CONSOLE -->
-<div id="console">
-<div id="log"></div>
-<input id="cmd" placeholder="add/del/list">
-</div>
+<button onclick="openShortcut('yt')">YouTube</button>
+<button onclick="openShortcut('gh')">GitHub</button>
 
 <script>
 
 /* DATABASE */
 let db = JSON.parse(localStorage.getItem("jref_db") || "{}");
 
-/* PRESETS */
-db["yt"] = "https://youtube.com";
-db["gh"] = "https://github.com";
-
-/* SEARCH → RESULTS */
-document.getElementById("search").addEventListener("keydown",e=>{
-  if(e.key==="Enter"){
-    location.href="results.html?q="+encodeURIComponent(e.target.value);
-  }
-});
-
-/* OPEN SHORTCUT */
-function go(k){
-  if(db[k]) location.href=db[k];
+/* PRESET SHORTCUTS */
+if(!db.yt){
+  db.yt = "https://youtube.com";
 }
 
-/* CONSOLE TOGGLE */
-document.addEventListener("keydown",e=>{
-  if(e.shiftKey && e.ctrlKey && e.key.toLowerCase()==="j"){
-    toggleConsole();
+if(!db.gh){
+  db.gh = "https://github.com";
+}
+
+localStorage.setItem("jref_db", JSON.stringify(db));
+
+/* SEARCH */
+document.getElementById("search").addEventListener("keydown", e => {
+
+  if(e.key === "Enter"){
+
+    const q = e.target.value.trim();
+
+    location.href =
+      "results.html?q=" +
+      encodeURIComponent(q);
   }
+
 });
 
+/* SHORTCUT OPEN */
+function openShortcut(key){
+
+  if(db[key]){
+    location.href = db[key];
+  }
+
+}
+
+/* CONSOLE */
+
+const consoleBox = document.createElement("div");
+consoleBox.id = "console";
+
+consoleBox.innerHTML = `
+<div id="log"></div>
+<input id="cmd" placeholder="list | add name url | del name">
+`;
+
+document.body.appendChild(consoleBox);
+
 function toggleConsole(){
-  const c=document.getElementById("console");
-  c.style.display=c.style.display==="block"?"none":"block";
+
+  const c = document.getElementById("console");
+
+  c.style.display =
+    c.style.display === "block"
+    ? "none"
+    : "block";
 }
 
 function log(msg){
-  const l=document.getElementById("log");
-  l.innerHTML+="> "+msg+"<br>";
-  l.scrollTop=l.scrollHeight;
+
+  const box = document.getElementById("log");
+
+  box.innerHTML += "> " + msg + "<br>";
+
+  box.scrollTop = box.scrollHeight;
 }
 
-/* COMMANDS */
-document.getElementById("cmd").addEventListener("keydown",e=>{
-  if(e.key==="Enter"){
-    handle(e.target.value.trim());
-    e.target.value="";
+/* SECRET SHORTCUT
+SHIFT + NUMPAD8 + J
+*/
+
+let keypad8Held = false;
+
+document.addEventListener("keydown", e => {
+
+  if(e.code === "Numpad8"){
+    keypad8Held = true;
   }
+
+  if(
+    e.shiftKey &&
+    keypad8Held &&
+    e.key.toLowerCase() === "j"
+  ){
+    toggleConsole();
+  }
+
 });
 
-function handle(cmd){
+document.addEventListener("keyup", e => {
+
+  if(e.code === "Numpad8"){
+    keypad8Held = false;
+  }
+
+});
+
+/* COMMANDS */
+
+document.addEventListener("keydown", e => {
+
+  if(
+    e.target.id === "cmd" &&
+    e.key === "Enter"
+  ){
+
+    const cmd = e.target.value.trim();
+
+    e.target.value = "";
+
+    handleCommand(cmd);
+  }
+
+});
+
+function handleCommand(cmd){
 
   log(cmd);
 
-  if(cmd==="list"){
-    Object.keys(db).forEach(k=>{
-      log(k+" → "+db[k]);
+  if(cmd === "list"){
+
+    Object.keys(db).forEach(k => {
+      log(k + " → " + db[k]);
     });
+
     return;
   }
 
   if(cmd.startsWith("del ")){
-    const k=cmd.split(" ")[1];
-    delete db[k];
-    localStorage.setItem("jref_db",JSON.stringify(db));
-    log("deleted "+k);
+
+    const key =
+      cmd.substring(4).trim();
+
+    delete db[key];
+
+    localStorage.setItem(
+      "jref_db",
+      JSON.stringify(db)
+    );
+
+    log("Deleted: " + key);
+
     return;
   }
 
-  /* 10 SECOND TIMER ADD */
   if(cmd.startsWith("add ")){
 
-    const [,key,url]=cmd.split(" ");
-    let t=10;
+    const parts = cmd.split(" ");
 
-    log("adding "+key+" in 10s...");
+    const key = parts[1];
+    const url = parts.slice(2).join(" ");
 
-    let timer=setInterval(()=>{
+    if(!key || !url){
+      log("Usage: add name url");
+      return;
+    }
 
-      t--;
-      log("⏳ "+key+" in "+t+"s");
+    let seconds = 10;
 
-      if(t<=0){
+    log("Adding " + key);
+
+    const timer = setInterval(() => {
+
+      log("⏳ " + seconds + "s");
+
+      seconds--;
+
+      if(seconds < 0){
+
         clearInterval(timer);
 
-        db[key]=url;
-        localStorage.setItem("jref_db",JSON.stringify(db));
+        db[key] = url;
 
-        log("✅ added "+key);
+        localStorage.setItem(
+          "jref_db",
+          JSON.stringify(db)
+        );
+
+        log("✅ Added " + key);
       }
 
     },1000);
@@ -183,7 +272,7 @@ function handle(cmd){
     return;
   }
 
-  log("unknown command");
+  log("Unknown command");
 }
 
 </script>
