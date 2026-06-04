@@ -5,14 +5,15 @@
 
 <style>
 body{
-  font-family: Arial;
+  font-family:Arial;
   padding:20px;
 }
 
-a{
-  display:block;
+.result{
+  padding:10px;
   margin:10px 0;
-  font-size:18px;
+  border:1px solid #ddd;
+  border-radius:10px;
 }
 </style>
 </head>
@@ -21,43 +22,76 @@ a{
 
 <h1>Results</h1>
 
-<div id="results"></div>
+<div id="out"></div>
 
 <script>
 
-const q = new URLSearchParams(location.search).get("q");
+const q = new URLSearchParams(location.search).get("q") || "";
 
 /* LOAD DB */
 let db = JSON.parse(localStorage.getItem("jref_db") || "{}");
 
-let box = document.getElementById("results");
+let out = document.getElementById("out");
 
-box.innerHTML = "<p>Searching: <b>"+q+"</b></p>";
+out.innerHTML = `<p>Searching: <b>${q}</b></p>`;
 
-let found = false;
+/* SIMILARITY SEARCH */
+function similarity(a,b){
+  a=a.toLowerCase();
+  b=b.toLowerCase();
 
-/* SEARCH DB */
+  let score=0;
+
+  if(a.includes(b)) score+=3;
+  if(b.includes(a)) score+=3;
+
+  let aWords=a.split(" ");
+  let bWords=b.split(" ");
+
+  aWords.forEach(w=>{
+    if(bWords.includes(w)) score++;
+  });
+
+  return score;
+}
+
+let results=[];
+
+/* FIND MATCHES */
 for(let k in db){
 
-  if(k.includes(q)){
+  let score = similarity(k,q);
 
-    let div = document.createElement("div");
-
-    div.innerHTML = `
-      <b>${k}</b><br>
-      <a href="${db[k]}">${db[k]}</a>
-    `;
-
-    box.appendChild(div);
-    found = true;
+  if(score>0){
+    results.push({k,score,url:db[k]});
   }
 }
 
-/* FALLBACK */
-if(!found){
-  box.innerHTML += `
+/* SORT BEST MATCH FIRST */
+results.sort((a,b)=>b.score-a.score);
+
+/* SHOW RESULTS */
+if(results.length>0){
+
+  results.forEach(r=>{
+    let div=document.createElement("div");
+    div.className="result";
+
+    div.innerHTML=`
+      <b>${r.k}</b><br>
+      <a href="${r.url}" target="_blank">${r.url}</a><br>
+      score: ${r.score}
+    `;
+
+    out.appendChild(div);
+  });
+
+}else{
+
+  out.innerHTML+=`
+    <p>No match found in database.</p>
     <a href="https://www.google.com/search?q=${encodeURIComponent(q)}">
-      Google Search "${q}"
+      Search Google for "${q}"
     </a>
   `;
 }
