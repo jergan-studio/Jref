@@ -1,199 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>JREF Results</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jref Results</title>
 
 <style>
 body{
-  margin:0;
   font-family:Arial;
-  background:#0b0b0b;
-  color:white;
+  margin:0;
+  padding:20px;
 }
 
-/* AI BOX (TOP ONLY) */
-.aiBox{
-  background:#121826;
-  border-bottom:1px solid #3b82f6;
-  padding:12px;
-}
-
-.aiTitle{
-  font-weight:bold;
-  color:#60a5fa;
-  margin-bottom:6px;
-}
-
-.aiText{
-  font-size:13px;
-  opacity:0.9;
-  line-height:1.4;
-}
-
-/* SEARCH BAR */
-header{
-  padding:10px;
-  background:#0f0f0f;
-  display:flex;
-}
-
-header input{
-  flex:1;
-  padding:10px;
-  border:none;
-  border-radius:999px;
-  outline:none;
-}
-
-/* RESULTS */
-#results{
-  padding:12px;
-}
-
-.result{
+a{
   display:block;
-  background:#141414;
-  border:1px solid #2a2a2a;
-  border-radius:14px;
-  padding:14px;
-  margin-bottom:10px;
-  cursor:pointer;
-  transition:0.2s;
-}
-
-.result:hover{
-  background:#1f1f1f;
-  border-color:#3b82f6;
-}
-
-.title{
-  font-weight:bold;
-  font-size:15px;
-}
-
-.desc{
-  font-size:12px;
-  opacity:0.7;
-  margin-top:5px;
-}
-
-.link{
-  font-size:11px;
-  color:#60a5fa;
-  margin-top:6px;
-  word-break:break-all;
+  margin:10px 0;
+  font-size:18px;
+  color:blue;
 }
 </style>
 </head>
 
 <body>
 
-<!-- 🧠 AI TOP (NOT A RESULT) -->
-<div class="aiBox">
-  <div class="aiTitle">🧠 JREF AI</div>
-  <div class="aiText" id="aiText">Ready for search...</div>
-</div>
+<h1>Results</h1>
 
-<!-- SEARCH -->
-<header>
-  <input id="searchBox" placeholder="Search JREF...">
-</header>
-
-<!-- RESULTS -->
 <div id="results"></div>
 
 <script>
-const searchBox = document.getElementById("searchBox");
-const resultsDiv = document.getElementById("results");
-const aiText = document.getElementById("aiText");
-
 const params = new URLSearchParams(location.search);
-const initialQuery = params.get("q") || "";
+const q = params.get("q");
 
-/* AI DISPLAY ONLY */
-function updateAI(q){
-  aiText.innerHTML = q
-    ? `Searching for: <b>${q}</b>`
-    : "Ready for search...";
-}
+document.getElementById("results").innerHTML =
+`<p>Search: <b>${q}</b></p>`;
 
-/* SAME TAB NAVIGATION */
-function go(url){
-  location.href = url;
-}
+/* SIMPLE SEARCH (Google links) */
+const sites = [
+  "https://www.google.com/search?q=",
+  "https://www.youtube.com/results?search_query="
+];
 
-/* RESULT BUILDER */
-function addResult(title, desc, url){
-  const div = document.createElement("div");
-  div.className = "result";
-
-  div.innerHTML = `
-    <div class="title">${title}</div>
-    <div class="desc">${desc || ""}</div>
-    <div class="link">${url}</div>
-  `;
-
-  div.onclick = () => go(url);
-  resultsDiv.appendChild(div);
-}
-
-/* MAIN SEARCH */
-function runSearch(q){
-  resultsDiv.innerHTML = "";
-  updateAI(q);
-
-  // 🧠 AI MESSAGE (TOP ONLY)
-  aiText.innerHTML = `
-    You searched for <b>${q}</b><br>
-    Results are listed below.
-  `;
-
-  // 🔎 SEARCH ENGINES
-  addResult("🔎 Google","Search",
-    "https://www.google.com/search?q=" + encodeURIComponent(q));
-
-  addResult("🅱️ Bing","Search",
-    "https://www.bing.com/search?q=" + encodeURIComponent(q));
-
-  addResult("🦆 DuckDuckGo","Search",
-    "https://duckduckgo.com/?q=" + encodeURIComponent(q));
-
-  // 🌐 CLEAN DOMAIN GENERATOR
-  const clean = q.toLowerCase().replace(/[^a-z0-9]/g,"");
-
-  addResult("🎓 " + clean + ".mit.edu",
-    "Generated academic domain",
-    "https://" + clean + ".mit.edu");
-
-  addResult("▲ " + clean + ".vercel.app",
-    "Generated deployment domain",
-    "https://" + clean + ".vercel.app");
-
-  addResult("🌐 " + clean + ".com",
-    "Generated domain",
-    "https://" + clean + ".com");
-
-  addResult("🌐 " + clean + ".org",
-    "Generated domain",
-    "https://" + clean + ".org");
-
-  addResult("🌐 " + clean + ".net",
-    "Generated domain",
-    "https://" + clean + ".net");
-}
-
-/* ENTER KEY SEARCH */
-searchBox.addEventListener("keydown", e=>{
-  if(e.key === "Enter"){
-    runSearch(searchBox.value.trim());
-  }
+sites.forEach(base=>{
+  const a = document.createElement("a");
+  a.href = base + encodeURIComponent(q);
+  a.innerText = "Search on: " + base.replace("https://www.","").split("/")[0];
+  document.getElementById("results").appendChild(a);
 });
-
-/* AUTO LOAD */
-searchBox.value = initialQuery;
-if(initialQuery) runSearch(initialQuery);
 </script>
 
 </body>
