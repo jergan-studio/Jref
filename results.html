@@ -1,18 +1,67 @@
 <!DOCTYPE html>
 <html>
+<head>
+<title>Jref Results</title>
+
+<style>
+body{
+  font-family: Arial;
+  padding:20px;
+}
+
+a{
+  display:block;
+  margin:10px 0;
+  font-size:18px;
+}
+</style>
+</head>
+
 <body>
 
-<h1>Results Page</h1>
+<h1>Results</h1>
+
+<div id="results"></div>
 
 <script>
+
 const q = new URLSearchParams(location.search).get("q");
 
-document.body.innerHTML += `
-<p>Query: ${q}</p>
-<a href="https://www.google.com/search?q=${encodeURIComponent(q)}">
-Google Search
-</a>
-`;
+/* LOAD DB */
+let db = JSON.parse(localStorage.getItem("jref_db") || "{}");
+
+let box = document.getElementById("results");
+
+box.innerHTML = "<p>Searching: <b>"+q+"</b></p>";
+
+let found = false;
+
+/* SEARCH DB */
+for(let k in db){
+
+  if(k.includes(q)){
+
+    let div = document.createElement("div");
+
+    div.innerHTML = `
+      <b>${k}</b><br>
+      <a href="${db[k]}">${db[k]}</a>
+    `;
+
+    box.appendChild(div);
+    found = true;
+  }
+}
+
+/* FALLBACK */
+if(!found){
+  box.innerHTML += `
+    <a href="https://www.google.com/search?q=${encodeURIComponent(q)}">
+      Google Search "${q}"
+    </a>
+  `;
+}
+
 </script>
 
 </body>
