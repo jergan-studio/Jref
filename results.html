@@ -1,49 +1,18 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>Jref Results</title>
-
-<style>
-body{
-  font-family:Arial;
-  margin:0;
-  padding:20px;
-}
-
-a{
-  display:block;
-  margin:10px 0;
-  font-size:18px;
-  color:blue;
-}
-</style>
-</head>
-
 <body>
 
-<h1>Results</h1>
-
-<div id="results"></div>
+<h1>Results Page</h1>
 
 <script>
-const params = new URLSearchParams(location.search);
-const q = params.get("q");
+const q = new URLSearchParams(location.search).get("q");
 
-document.getElementById("results").innerHTML =
-`<p>Search: <b>${q}</b></p>`;
-
-/* SIMPLE SEARCH (Google links) */
-const sites = [
-  "https://www.google.com/search?q=",
-  "https://www.youtube.com/results?search_query="
-];
-
-sites.forEach(base=>{
-  const a = document.createElement("a");
-  a.href = base + encodeURIComponent(q);
-  a.innerText = "Search on: " + base.replace("https://www.","").split("/")[0];
-  document.getElementById("results").appendChild(a);
-});
+document.body.innerHTML += `
+<p>Query: ${q}</p>
+<a href="https://www.google.com/search?q=${encodeURIComponent(q)}">
+Google Search
+</a>
+`;
 </script>
 
 </body>
