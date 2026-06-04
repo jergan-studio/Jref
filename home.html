@@ -1,21 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Jref</title>
+<title>Jref Home</title>
 
 <style>
 :root{
   --bg:#ffffff;
   --text:#000;
   --box:#e6c3d3;
-  --panel:#ffffff;
 }
 
 body.dark{
-  --bg: rgba(20,20,20,0.55);
+  --bg: rgba(20,20,20,0.6);
   --text:#fff;
   --box: rgba(40,40,40,0.6);
-  --panel: rgba(30,30,30,0.55);
 }
 
 body{
@@ -24,16 +22,6 @@ body{
   margin:0;
   background:var(--bg);
   color:var(--text);
-  transition:0.2s;
-}
-
-body.dark{
-  backdrop-filter: blur(25px);
-}
-
-.title{
-  font-size:60px;
-  margin-top:80px;
 }
 
 input{
@@ -42,231 +30,143 @@ input{
   border-radius:20px;
   border:none;
   background:var(--box);
-  margin:5px;
-  outline:none;
 }
 
 button{
   margin:5px;
-  padding:12px;
+  padding:10px;
   border:none;
   border-radius:10px;
   background:var(--box);
   cursor:pointer;
 }
 
-/* console */
+/* SECRET CONSOLE */
 #console{
   display:none;
   position:fixed;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  width:70%;
-  height:70%;
-  background:var(--panel);
-  border-radius:12px;
-  overflow:hidden;
-  flex-direction:column;
-  box-shadow:0 10px 30px rgba(0,0,0,0.3);
-}
-
-#consoleHeader{
+  width:600px;
+  height:400px;
+  background:rgba(0,0,0,0.9);
+  color:lime;
+  font-family:monospace;
   padding:10px;
-  background:rgba(0,0,0,0.1);
-  display:flex;
-  justify-content:space-between;
+  border-radius:10px;
 }
 
-#results{
-  flex:1;
+#log{
+  height:330px;
   overflow:auto;
-  padding:10px;
 }
 
-.result{
-  padding:10px;
-  margin:5px 0;
-  background:rgba(0,0,0,0.05);
-  border-radius:8px;
-}
-
-.shortcutBox{
-  display:inline-flex;
-  align-items:center;
-}
-
-.deleteBtn{
-  background:#ff6b6b;
+#cmd{
+  width:100%;
+  background:black;
+  color:lime;
+  border:none;
 }
 </style>
 </head>
 
 <body>
 
-<div class="title">Jref</div>
+<h1>Jref</h1>
 
-<!-- SEARCH -->
-<input id="search" placeholder="Search or shortcut (yt, gh, gd)">
+<input id="search" placeholder="Search...">
 <br>
 
-<!-- PRE SHORTCUTS -->
 <button onclick="go('yt')">YouTube</button>
 <button onclick="go('gh')">GitHub</button>
 
-<!-- TOOLS -->
-<button onclick="toggleDark()">🌙</button>
-<button onclick="toggleConsole()">🔎 Search Console</button>
-<button onclick="openAdd()">＋ Shortcut</button>
-
-<br><br>
-
-<!-- CUSTOM SHORTCUTS -->
-<div id="custom"></div>
-
-<!-- ADD SHORTCUT -->
-<div id="addBox" style="display:none;">
-  <input id="name" placeholder="name">
-  <input id="url" placeholder="url">
-  <button onclick="add()">Save</button>
-</div>
-
-<!-- SEARCH CONSOLE -->
+<!-- SECRET CONSOLE -->
 <div id="console">
-
-<div id="consoleHeader">
-  <b>Search Console</b>
-  <button onclick="closeConsole()">✕</button>
-</div>
-
-<div id="results"></div>
-
+<div id="log"></div>
+<input id="cmd" placeholder="command...">
 </div>
 
 <script>
 
-/* PRE SHORTCUTS */
-let shortcuts = {
-  yt:"https://youtube.com",
-  gh:"https://github.com"
-};
+/* DATABASE */
+let db = JSON.parse(localStorage.getItem("jref_db") || "{}");
 
-/* LOAD SAVED */
-let saved = JSON.parse(localStorage.getItem("jref_shortcuts")||"{}");
-shortcuts = {...shortcuts,...saved};
+/* PRESETS */
+db["yt"] = "https://youtube.com";
+db["gh"] = "https://github.com";
 
-/* RENDER SHORTCUTS */
-function render(){
-
-  const box = document.getElementById("custom");
-  box.innerHTML = "";
-
-  Object.keys(saved).forEach(k=>{
-
-    const wrap = document.createElement("div");
-
-    const b = document.createElement("button");
-    b.innerText = k;
-    b.onclick = ()=>location.href=saved[k];
-
-    const d = document.createElement("button");
-    d.innerText = "✕";
-    d.className="deleteBtn";
-
-    d.onclick = ()=>{
-      delete saved[k];
-      localStorage.setItem("jref_shortcuts",JSON.stringify(saved));
-      render();
-    };
-
-    wrap.appendChild(b);
-    wrap.appendChild(d);
-    box.appendChild(wrap);
-  });
-}
-render();
-
-/* PRE SHORTCUT GO */
-function go(k){
-  location.href = shortcuts[k];
-}
-
-/* DARK */
-function toggleDark(){
-  document.body.classList.toggle("dark");
-  localStorage.setItem("dark",document.body.classList.contains("dark"));
-}
-if(localStorage.getItem("dark")==="true")document.body.classList.add("dark");
-
-/* ADD */
-function openAdd(){
-  const b=document.getElementById("addBox");
-  b.style.display=b.style.display==="block"?"none":"block";
-}
-
-function add(){
-  const n=document.getElementById("name").value;
-  const u=document.getElementById("url").value;
-
-  saved[n]=u;
-  localStorage.setItem("jref_shortcuts",JSON.stringify(saved));
-  render();
-}
-
-/* CONSOLE */
-function toggleConsole(){
-  document.getElementById("console").style.display="flex";
-}
-
-function closeConsole(){
-  document.getElementById("console").style.display="none";
-}
-
-/* SEARCH */
+/* SEARCH → RESULTS.HTML */
 document.getElementById("search").addEventListener("keydown",e=>{
   if(e.key==="Enter"){
-    runSearch(e.target.value);
+    location.href="results.html?q="+encodeURIComponent(e.target.value);
+  }
+});
+
+/* SHORTCUT OPEN */
+function go(k){
+  if(db[k]) location.href = db[k];
+}
+
+/* SECRET OPEN */
+document.addEventListener("keydown",e=>{
+  if(e.shiftKey && e.ctrlKey && e.key.toLowerCase()==="j"){
     toggleConsole();
   }
 });
 
-/* SEARCH ENGINE (console + results) */
-function runSearch(q){
+function toggleConsole(){
+  const c=document.getElementById("console");
+  c.style.display=c.style.display==="block"?"none":"block";
+}
 
-  const box = document.getElementById("results");
-  box.innerHTML="";
+function log(msg){
+  const l=document.getElementById("log");
+  l.innerHTML+="> "+msg+"<br>";
+  l.scrollTop=l.scrollHeight;
+}
 
-  const all = {...shortcuts,...saved};
-
-  let found = false;
-
-  Object.keys(all).forEach(k=>{
-    if(k.includes(q)){
-
-      const div=document.createElement("div");
-      div.className="result";
-
-      div.innerHTML=`
-        <b>${k}</b><br>
-        <a href="${all[k]}" target="_blank">${all[k]}</a>
-      `;
-
-      box.appendChild(div);
-      found=true;
-    }
-  });
-
-  /* fallback search */
-  if(!found){
-    box.innerHTML+=`
-      <div class="result">
-        <a target="_blank"
-        href="https://www.google.com/search?q=${encodeURIComponent(q)}">
-        🔎 Google Search: ${q}
-        </a>
-      </div>
-    `;
+/* COMMAND SYSTEM */
+document.getElementById("cmd").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    const cmd=e.target.value.trim();
+    e.target.value="";
+    handle(cmd);
   }
+});
+
+function handle(cmd){
+
+  log(cmd);
+
+  if(cmd==="list"){
+    Object.keys(db).forEach(k=>log(k+" → "+db[k]));
+    return;
+  }
+
+  if(cmd.startsWith("add ")){
+    const [,key,url]=cmd.split(" ");
+
+    log("Adding "+key+" (10 min delay)");
+
+    setTimeout(()=>{
+      db[key]=url;
+      localStorage.setItem("jref_db",JSON.stringify(db));
+      log("Added: "+key);
+    },600000); // 10 min
+
+    return;
+  }
+
+  if(cmd.startsWith("del ")){
+    const key=cmd.split(" ")[1];
+    delete db[key];
+    localStorage.setItem("jref_db",JSON.stringify(db));
+    log("Deleted "+key);
+    return;
+  }
+
+  log("unknown command");
 }
 
 </script>
