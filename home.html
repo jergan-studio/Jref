@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Jref Home</title>
+<title>Jref</title>
 
 <style>
 :root{
@@ -56,47 +56,47 @@ button{
   cursor:pointer;
 }
 
-#panel{
+/* ===== SEARCH CONSOLE ===== */
+#searchConsole{
   display:none;
   position:fixed;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
+  width:70%;
+  height:70%;
   background:var(--panel);
-  padding:20px;
   border-radius:12px;
-  width:320px;
+  box-shadow:0 10px 40px rgba(0,0,0,0.3);
+  overflow:hidden;
+  flex-direction:column;
 }
 
-#console{
-  display:none;
-  position:fixed;
-  bottom:10px;
-  right:10px;
-  width:320px;
-  height:220px;
-  background:rgba(0,0,0,0.85);
-  color:lime;
-  font-family:monospace;
-  font-size:12px;
+#searchHeader{
   padding:10px;
-  border-radius:10px;
-}
-
-#cmd{
-  width:100%;
-  background:black;
-  color:lime;
-  border:none;
-}
-
-.shortcutBox{
-  display:inline-flex;
+  background:rgba(0,0,0,0.1);
+  display:flex;
+  justify-content:space-between;
   align-items:center;
 }
 
-.deleteBtn{
-  background:#ff6b6b;
+#results{
+  flex:1;
+  padding:10px;
+  overflow:auto;
+}
+
+.result{
+  margin:10px 0;
+  padding:10px;
+  border-radius:8px;
+  background:rgba(0,0,0,0.05);
+}
+
+iframe{
+  width:100%;
+  height:100%;
+  border:none;
 }
 </style>
 </head>
@@ -105,96 +105,92 @@ button{
 
 <div class="title">Jref</div>
 
-<input id="search" placeholder="Search...">
+<input id="search" placeholder="Search anything...">
 <br>
 
-<button onclick="location.href='https://youtube.com'">YouTube</button>
-<button onclick="location.href='https://github.com'">GitHub</button>
-
 <button onclick="toggleDark()">🌙</button>
-<button onclick="togglePanel()">＋ Shortcut</button>
-<button onclick="toggleConsole()">🖥</button>
+<button onclick="openConsole()">🔍 Search Console</button>
 
-<div id="customButtons"></div>
+<!-- SEARCH CONSOLE -->
+<div id="searchConsole">
 
-<!-- PANEL -->
-<div id="panel">
-<h3>Add Shortcut</h3>
-<input id="name" placeholder="name">
-<input id="url" placeholder="url">
-<br><br>
-<button onclick="addShortcut()">Save</button>
-<button onclick="togglePanel()">Close</button>
+<div id="searchHeader">
+  <b>Search Console</b>
+  <button onclick="closeConsole()">✕</button>
 </div>
 
-<!-- CONSOLE -->
-<div id="console">
-<div id="log"></div>
-<input id="cmd" placeholder="cmd...">
+<div id="results"></div>
+
 </div>
 
 <script>
-let saved = JSON.parse(localStorage.getItem("jref_shortcuts") || "{}");
 
-function render(){
-  const box = document.getElementById("customButtons");
-  box.innerHTML = "";
-
-  Object.keys(saved).forEach(k=>{
-    const wrap = document.createElement("div");
-
-    const b = document.createElement("button");
-    b.innerText = k;
-    b.onclick = ()=> location.href = saved[k];
-
-    const d = document.createElement("button");
-    d.innerText = "✕";
-    d.onclick = ()=>{
-      delete saved[k];
-      localStorage.setItem("jref_shortcuts", JSON.stringify(saved));
-      render();
-    };
-
-    wrap.appendChild(b);
-    wrap.appendChild(d);
-    box.appendChild(wrap);
-  });
+/* ===== DARK MODE ===== */
+function toggleDark(){
+  document.body.classList.toggle("dark");
+  localStorage.setItem("dark",
+    document.body.classList.contains("dark")
+  );
+}
+if(localStorage.getItem("dark")==="true"){
+  document.body.classList.add("dark");
 }
 
-render();
+/* ===== OPEN CONSOLE ===== */
+function openConsole(){
+  document.getElementById("searchConsole").style.display="flex";
+}
 
+/* ===== CLOSE CONSOLE ===== */
+function closeConsole(){
+  document.getElementById("searchConsole").style.display="none";
+}
+
+/* ===== SEARCH ===== */
 document.getElementById("search").addEventListener("keydown",e=>{
   if(e.key==="Enter"){
-    location.href="results.html?q="+encodeURIComponent(e.target.value);
+    runSearch(e.target.value);
+    openConsole();
   }
 });
 
-function toggleDark(){
-  document.body.classList.toggle("dark");
-  localStorage.setItem("dark", document.body.classList.contains("dark"));
+function runSearch(q){
+
+  const box = document.getElementById("results");
+  box.innerHTML = "";
+
+  /* GOOGLE */
+  const g = document.createElement("div");
+  g.className="result";
+  g.innerHTML = `
+    <a href="https://www.google.com/search?q=${encodeURIComponent(q)}" target="_blank">
+      🔎 Google Search: ${q}
+    </a>
+  `;
+
+  /* YOUTUBE */
+  const y = document.createElement("div");
+  y.className="result";
+  y.innerHTML = `
+    <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(q)}" target="_blank">
+      ▶ YouTube Search: ${q}
+    </a>
+  `;
+
+  /* BING */
+  const b = document.createElement("div");
+  b.className="result";
+  b.innerHTML = `
+    <a href="https://www.bing.com/search?q=${encodeURIComponent(q)}" target="_blank">
+      🌐 Bing Search: ${q}
+    </a>
+  `;
+
+  box.appendChild(g);
+  box.appendChild(y);
+  box.appendChild(b);
 }
-if(localStorage.getItem("dark")==="true") document.body.classList.add("dark");
 
-function togglePanel(){
-  const p=document.getElementById("panel");
-  p.style.display=p.style.display==="block"?"none":"block";
-}
-
-function addShortcut(){
-  const n=document.getElementById("name").value;
-  const u=document.getElementById("url").value;
-
-  if(!n||!u) return;
-
-  saved[n]=u;
-  localStorage.setItem("jref_shortcuts", JSON.stringify(saved));
-  render();
-}
-
-function toggleConsole(){
-  const c=document.getElementById("console");
-  c.style.display=c.style.display==="block"?"none":"block";
-}
 </script>
 
 </body>
