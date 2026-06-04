@@ -278,4 +278,284 @@ function handleCommand(cmd){
 </script>
 
 </body>
+</html><!DOCTYPE html>
+<html>
+<head>
+<title>Jref</title>
+
+<style>
+:root{
+  --bg:#ffffff;
+  --text:#000;
+  --box:#e6c3d3;
+}
+
+body{
+  font-family:Arial,sans-serif;
+  text-align:center;
+  background:var(--bg);
+  color:var(--text);
+  margin:0;
+}
+
+h1{
+  margin-top:80px;
+  font-size:60px;
+}
+
+input{
+  padding:12px;
+  width:50%;
+  border:none;
+  border-radius:20px;
+  background:var(--box);
+}
+
+button{
+  padding:10px 15px;
+  margin:5px;
+  border:none;
+  border-radius:10px;
+  background:var(--box);
+  cursor:pointer;
+}
+
+#console{
+  display:none;
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:650px;
+  height:420px;
+  background:#111;
+  color:lime;
+  border-radius:10px;
+  padding:10px;
+  text-align:left;
+  font-family:monospace;
+}
+
+#log{
+  height:360px;
+  overflow:auto;
+}
+
+#cmd{
+  width:100%;
+  background:#000;
+  color:lime;
+  border:none;
+  padding:8px;
+  box-sizing:border-box;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Jref</h1>
+
+<input id="search" placeholder="Search Jref...">
+
+<br><br>
+
+<button onclick="openShortcut('yt')">YouTube</button>
+<button onclick="openShortcut('gh')">GitHub</button>
+
+<script>
+
+/* DATABASE */
+let db = JSON.parse(localStorage.getItem("jref_db") || "{}");
+
+/* PRESET SHORTCUTS */
+if(!db.yt){
+  db.yt = "https://youtube.com";
+}
+
+if(!db.gh){
+  db.gh = "https://github.com";
+}
+
+localStorage.setItem("jref_db", JSON.stringify(db));
+
+/* SEARCH */
+document.getElementById("search").addEventListener("keydown", e => {
+
+  if(e.key === "Enter"){
+
+    const q = e.target.value.trim();
+
+    location.href =
+      "results.html?q=" +
+      encodeURIComponent(q);
+  }
+
+});
+
+/* SHORTCUT OPEN */
+function openShortcut(key){
+
+  if(db[key]){
+    location.href = db[key];
+  }
+
+}
+
+/* CONSOLE */
+
+const consoleBox = document.createElement("div");
+consoleBox.id = "console";
+
+consoleBox.innerHTML = `
+<div id="log"></div>
+<input id="cmd" placeholder="list | add name url | del name">
+`;
+
+document.body.appendChild(consoleBox);
+
+function toggleConsole(){
+
+  const c = document.getElementById("console");
+
+  c.style.display =
+    c.style.display === "block"
+    ? "none"
+    : "block";
+}
+
+function log(msg){
+
+  const box = document.getElementById("log");
+
+  box.innerHTML += "> " + msg + "<br>";
+
+  box.scrollTop = box.scrollHeight;
+}
+
+/* SECRET SHORTCUT
+SHIFT + NUMPAD8 + J
+*/
+
+let keypad8Held = false;
+
+document.addEventListener("keydown", e => {
+
+  if(e.code === "Numpad8"){
+    keypad8Held = true;
+  }
+
+  if(
+    e.shiftKey &&
+    keypad8Held &&
+    e.key.toLowerCase() === "j"
+  ){
+    toggleConsole();
+  }
+
+});
+
+document.addEventListener("keyup", e => {
+
+  if(e.code === "Numpad8"){
+    keypad8Held = false;
+  }
+
+});
+
+/* COMMANDS */
+
+document.addEventListener("keydown", e => {
+
+  if(
+    e.target.id === "cmd" &&
+    e.key === "Enter"
+  ){
+
+    const cmd = e.target.value.trim();
+
+    e.target.value = "";
+
+    handleCommand(cmd);
+  }
+
+});
+
+function handleCommand(cmd){
+
+  log(cmd);
+
+  if(cmd === "list"){
+
+    Object.keys(db).forEach(k => {
+      log(k + " → " + db[k]);
+    });
+
+    return;
+  }
+
+  if(cmd.startsWith("del ")){
+
+    const key =
+      cmd.substring(4).trim();
+
+    delete db[key];
+
+    localStorage.setItem(
+      "jref_db",
+      JSON.stringify(db)
+    );
+
+    log("Deleted: " + key);
+
+    return;
+  }
+
+  if(cmd.startsWith("add ")){
+
+    const parts = cmd.split(" ");
+
+    const key = parts[1];
+    const url = parts.slice(2).join(" ");
+
+    if(!key || !url){
+      log("Usage: add name url");
+      return;
+    }
+
+    let seconds = 10;
+
+    log("Adding " + key);
+
+    const timer = setInterval(() => {
+
+      log("⏳ " + seconds + "s");
+
+      seconds--;
+
+      if(seconds < 0){
+
+        clearInterval(timer);
+
+        db[key] = url;
+
+        localStorage.setItem(
+          "jref_db",
+          JSON.stringify(db)
+        );
+
+        log("✅ Added " + key);
+      }
+
+    },1000);
+
+    return;
+  }
+
+  log("Unknown command");
+}
+
+</script>
+
+</body>
 </html>
