@@ -24,7 +24,6 @@ input{
   border:none;
   border-radius:20px;
   background:#e6c3d3;
-  outline:none;
 }
 
 button{
@@ -49,8 +48,8 @@ button{
   color:lime;
   font-family:monospace;
   text-align:left;
-  border-radius:10px;
   padding:10px;
+  border-radius:10px;
   box-sizing:border-box;
 }
 
@@ -81,69 +80,80 @@ button{
 <button onclick="openShortcut('gh')">GitHub</button>
 <button onclick="openShortcut('giz')">Gizno AI</button>
 
+<!-- CONSOLE -->
+<div id="console">
+<div id="log"></div>
+<input id="cmd" placeholder="list | add name url | del name">
+</div>
+
 <script>
 
-/* DATABASE */
-let db = JSON.parse(localStorage.getItem("jref_db") || "{}");
+/* 🌐 CLOUD DATABASE */
+const DB_URL =
+"https://raw.githubusercontent.com/YOURNAME/YOURREPO/main/jref-db.json";
 
-/* PRESETS */
-if(!db.yt) db.yt = "https://youtube.com";
-if(!db.gh) db.gh = "https://github.com";
-if(!db.giz) db.giz = "https://gizno-ai.vercel.app/";
+let db = {};
 
-localStorage.setItem("jref_db", JSON.stringify(db));
+/* LOAD CLOUD DB */
+async function loadDB(){
 
-/* SEARCH */
-document.getElementById("search").addEventListener("keydown", e => {
-  if(e.key === "Enter"){
-    const q = e.target.value.trim();
-    if(!q) return;
+  try{
 
-    location.href = "results.html?q=" + encodeURIComponent(q);
+    const res = await fetch(DB_URL);
+    db = await res.json();
+
+  } catch(e){
+
+    db = {
+      yt:"https://youtube.com",
+      gh:"https://github.com",
+      giz:"https://gizno-ai.vercel.app/"
+    };
+
+  }
+
+}
+
+loadDB();
+
+/* SEARCH → results.html */
+document.getElementById("search").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    location.href="results.html?q="+encodeURIComponent(e.target.value);
   }
 });
 
 /* SHORTCUT OPEN */
-function openShortcut(key){
-  if(db[key]) location.href = db[key];
+function openShortcut(k){
+  if(db[k]) location.href=db[k];
 }
 
-/* CONSOLE */
-const consoleBox = document.createElement("div");
-consoleBox.id = "console";
-
-consoleBox.innerHTML = `
-<div id="log"></div>
-<input id="cmd" placeholder="list | add name url | del name">
-`;
-
-document.body.appendChild(consoleBox);
-
+/* CONSOLE TOGGLE */
 function toggleConsole(){
-  const c = document.getElementById("console");
-  c.style.display = (c.style.display === "block") ? "none" : "block";
+  const c=document.getElementById("console");
+  c.style.display = c.style.display==="block"?"none":"block";
 }
 
-function log(msg){
-  const box = document.getElementById("log");
-  box.innerHTML += "> " + msg + "<br>";
-  box.scrollTop = box.scrollHeight;
-}
-
-/* CTRL + ` TO OPEN CONSOLE */
-document.addEventListener("keydown", e => {
-  if(e.ctrlKey && (e.key === "`" || e.key === "~")){
+/* CTRL + ` */
+document.addEventListener("keydown",e=>{
+  if(e.ctrlKey && (e.key==="`" || e.key==="~")){
     e.preventDefault();
     toggleConsole();
   }
 });
 
-/* COMMAND INPUT */
-document.addEventListener("keydown", e => {
-  if(e.target.id === "cmd" && e.key === "Enter"){
-    const cmd = e.target.value.trim();
-    e.target.value = "";
-    handle(cmd);
+/* LOG */
+function log(msg){
+  const l=document.getElementById("log");
+  l.innerHTML+="> "+msg+"<br>";
+  l.scrollTop=l.scrollHeight;
+}
+
+/* COMMANDS */
+document.getElementById("cmd").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    handle(e.target.value.trim());
+    e.target.value="";
   }
 });
 
@@ -152,62 +162,52 @@ function handle(cmd){
   log(cmd);
 
   /* LIST */
-  if(cmd === "list"){
-    Object.keys(db).forEach(k => {
-      log(k + " → " + db[k]);
+  if(cmd==="list"){
+    Object.keys(db).forEach(k=>{
+      log(k+" → "+db[k]);
     });
+    return;
+  }
+
+  /* ADD (10 sec timer) */
+  if(cmd.startsWith("add ")){
+
+    const parts=cmd.split(" ");
+    const key=parts[1];
+    const url=parts.slice(2).join(" ");
+
+    let t=10;
+
+    log("Adding "+key+" in cloud...");
+
+    const timer=setInterval(()=>{
+
+      log("⏳ "+t+"s");
+
+      t--;
+
+      if(t<0){
+        clearInterval(timer);
+
+        /* ⚠️ NOTE: read-only cloud JSON can't update automatically */
+        db[key]=url;
+
+        log("⚠ Added locally (not cloud yet)");
+
+        log("To truly save globally, use Firebase or API backend");
+
+      }
+
+    },1000);
+
     return;
   }
 
   /* DELETE */
   if(cmd.startsWith("del ")){
-    const key = cmd.split(" ")[1];
-
+    const key=cmd.split(" ")[1];
     delete db[key];
-
-    localStorage.setItem("jref_db", JSON.stringify(db));
-
-    log("Deleted: " + key);
-    return;
-  }
-
-  /* ADD (10 SEC TIMER) */
-  if(cmd.startsWith("add ")){
-
-    const parts = cmd.split(" ");
-    const key = parts[1];
-    const url = parts.slice(2).join(" ");
-
-    if(!key || !url){
-      log("Usage: add name url");
-      return;
-    }
-
-    let t = 10;
-
-    log("Adding " + key + " in 10 seconds...");
-
-    const timer = setInterval(() => {
-
-      log("⏳ " + t + "s");
-
-      t--;
-
-      if(t < 0){
-        clearInterval(timer);
-
-        db[key] = url;
-
-        localStorage.setItem(
-          "jref_db",
-          JSON.stringify(db)
-        );
-
-        log("✅ Added: " + key);
-      }
-
-    },1000);
-
+    log("Deleted locally: "+key);
     return;
   }
 
