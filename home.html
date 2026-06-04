@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Jref Home</title>
+<title>Jref</title>
 
 <style>
 :root{
@@ -30,6 +30,7 @@ input{
   border-radius:20px;
   border:none;
   background:var(--box);
+  margin:5px;
 }
 
 button{
@@ -41,7 +42,7 @@ button{
   cursor:pointer;
 }
 
-/* SECRET CONSOLE */
+/* console */
 #console{
   display:none;
   position:fixed;
@@ -81,10 +82,12 @@ button{
 <button onclick="go('yt')">YouTube</button>
 <button onclick="go('gh')">GitHub</button>
 
-<!-- SECRET CONSOLE -->
+<button onclick="toggleConsole()">🖥 Console</button>
+
+<!-- CONSOLE -->
 <div id="console">
 <div id="log"></div>
-<input id="cmd" placeholder="command...">
+<input id="cmd" placeholder="add/del/list">
 </div>
 
 <script>
@@ -96,19 +99,19 @@ let db = JSON.parse(localStorage.getItem("jref_db") || "{}");
 db["yt"] = "https://youtube.com";
 db["gh"] = "https://github.com";
 
-/* SEARCH → RESULTS.HTML */
+/* SEARCH → RESULTS */
 document.getElementById("search").addEventListener("keydown",e=>{
   if(e.key==="Enter"){
     location.href="results.html?q="+encodeURIComponent(e.target.value);
   }
 });
 
-/* SHORTCUT OPEN */
+/* OPEN SHORTCUT */
 function go(k){
-  if(db[k]) location.href = db[k];
+  if(db[k]) location.href=db[k];
 }
 
-/* SECRET OPEN */
+/* CONSOLE TOGGLE */
 document.addEventListener("keydown",e=>{
   if(e.shiftKey && e.ctrlKey && e.key.toLowerCase()==="j"){
     toggleConsole();
@@ -126,12 +129,11 @@ function log(msg){
   l.scrollTop=l.scrollHeight;
 }
 
-/* COMMAND SYSTEM */
+/* COMMANDS */
 document.getElementById("cmd").addEventListener("keydown",e=>{
   if(e.key==="Enter"){
-    const cmd=e.target.value.trim();
+    handle(e.target.value.trim());
     e.target.value="";
-    handle(cmd);
   }
 });
 
@@ -140,29 +142,44 @@ function handle(cmd){
   log(cmd);
 
   if(cmd==="list"){
-    Object.keys(db).forEach(k=>log(k+" → "+db[k]));
-    return;
-  }
-
-  if(cmd.startsWith("add ")){
-    const [,key,url]=cmd.split(" ");
-
-    log("Adding "+key+" (10 min delay)");
-
-    setTimeout(()=>{
-      db[key]=url;
-      localStorage.setItem("jref_db",JSON.stringify(db));
-      log("Added: "+key);
-    },600000); // 10 min
-
+    Object.keys(db).forEach(k=>{
+      log(k+" → "+db[k]);
+    });
     return;
   }
 
   if(cmd.startsWith("del ")){
-    const key=cmd.split(" ")[1];
-    delete db[key];
+    const k=cmd.split(" ")[1];
+    delete db[k];
     localStorage.setItem("jref_db",JSON.stringify(db));
-    log("Deleted "+key);
+    log("deleted "+k);
+    return;
+  }
+
+  /* 10 SECOND TIMER ADD */
+  if(cmd.startsWith("add ")){
+
+    const [,key,url]=cmd.split(" ");
+    let t=10;
+
+    log("adding "+key+" in 10s...");
+
+    let timer=setInterval(()=>{
+
+      t--;
+      log("⏳ "+key+" in "+t+"s");
+
+      if(t<=0){
+        clearInterval(timer);
+
+        db[key]=url;
+        localStorage.setItem("jref_db",JSON.stringify(db));
+
+        log("✅ added "+key);
+      }
+
+    },1000);
+
     return;
   }
 
