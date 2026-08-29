@@ -35,7 +35,12 @@ button{
   cursor:pointer;
 }
 
-/* CONSOLE */
+#account{
+  position:absolute;
+  top:20px;
+  right:20px;
+}
+
 #console{
   display:none;
   position:fixed;
@@ -65,76 +70,76 @@ button{
   color:lime;
   border:none;
   outline:none;
+  box-sizing:border-box;
 }
 </style>
 </head>
 
 <body>
 
+<button id="account" onclick="jerganLogin()">Login with Jergan</button>
+
 <h1>Jref</h1>
 
-<input id="search" placeholder="Search...">
+<input id="search" placeholder="Search with DuckDuckGo..." autocomplete="off">
 <br><br>
 
 <button onclick="openShortcut('yt')">YouTube</button>
 <button onclick="openShortcut('gh')">GitHub</button>
 <button onclick="openShortcut('giz')">Gizno AI</button>
+<button onclick="duckSearch()">Search DuckDuckGo</button>
 
-<!-- CONSOLE -->
 <div id="console">
 <div id="log"></div>
 <input id="cmd" placeholder="list | add name url | del name">
 </div>
 
 <script>
-
-/* 🌐 CLOUD DATABASE */
-const DB_URL =
-"https://raw.githubusercontent.com/YOURNAME/YOURREPO/main/jref-db.json";
-
+const DB_URL = "https://raw.githubusercontent.com/YOURNAME/YOURREPO/main/jref-db.json";
 let db = {};
 
-/* LOAD CLOUD DB */
 async function loadDB(){
-
   try{
-
     const res = await fetch(DB_URL);
     db = await res.json();
-
   } catch(e){
-
     db = {
       yt:"https://youtube.com",
       gh:"https://github.com",
       giz:"https://gizno-ai.vercel.app/"
     };
-
   }
-
 }
-
 loadDB();
 
-/* SEARCH → results.html */
-document.getElementById("search").addEventListener("keydown",e=>{
-  if(e.key==="Enter"){
-    location.href="results.html?q="+encodeURIComponent(e.target.value);
-  }
+function getQuery(){
+  return document.getElementById("search").value.trim();
+}
+
+function duckSearch(){
+  const query = getQuery();
+  if(!query) return;
+  location.href = "results.html?q=" + encodeURIComponent(query);
+}
+
+document.getElementById("search").addEventListener("keydown", e=>{
+  if(e.key === "Enter") duckSearch();
 });
 
-/* SHORTCUT OPEN */
 function openShortcut(k){
   if(db[k]) location.href=db[k];
 }
 
-/* CONSOLE TOGGLE */
-function toggleConsole(){
-  const c=document.getElementById("console");
-  c.style.display = c.style.display==="block"?"none":"block";
+function jerganLogin(){
+  const returnTo = encodeURIComponent("https://jref-theta.vercel.app/home.html");
+  location.href = "https://jerganstudio.vercel.app/signin.html?site=jref&return_to=" + returnTo;
 }
 
-/* CTRL + ` */
+function toggleConsole(){
+  const c=document.getElementById("console");
+  c.style.display = c.style.display==="block" ? "none" : "block";
+}
+
 document.addEventListener("keydown",e=>{
   if(e.ctrlKey && (e.key==="`" || e.key==="~")){
     e.preventDefault();
@@ -142,14 +147,12 @@ document.addEventListener("keydown",e=>{
   }
 });
 
-/* LOG */
 function log(msg){
   const l=document.getElementById("log");
-  l.innerHTML+="> "+msg+"<br>";
+  l.innerHTML += "> " + msg + "<br>";
   l.scrollTop=l.scrollHeight;
 }
 
-/* COMMANDS */
 document.getElementById("cmd").addEventListener("keydown",e=>{
   if(e.key==="Enter"){
     handle(e.target.value.trim());
@@ -158,52 +161,32 @@ document.getElementById("cmd").addEventListener("keydown",e=>{
 });
 
 function handle(cmd){
-
   log(cmd);
 
-  /* LIST */
   if(cmd==="list"){
-    Object.keys(db).forEach(k=>{
-      log(k+" → "+db[k]);
-    });
+    Object.keys(db).forEach(k=>log(k+" → "+db[k]));
     return;
   }
 
-  /* ADD (10 sec timer) */
   if(cmd.startsWith("add ")){
-
     const parts=cmd.split(" ");
     const key=parts[1];
     const url=parts.slice(2).join(" ");
-
     let t=10;
-
     log("Adding "+key+" in cloud...");
-
     const timer=setInterval(()=>{
-
       log("⏳ "+t+"s");
-
       t--;
-
       if(t<0){
         clearInterval(timer);
-
-        /* ⚠️ NOTE: read-only cloud JSON can't update automatically */
         db[key]=url;
-
         log("⚠ Added locally (not cloud yet)");
-
         log("To truly save globally, use Firebase or API backend");
-
       }
-
     },1000);
-
     return;
   }
 
-  /* DELETE */
   if(cmd.startsWith("del ")){
     const key=cmd.split(" ")[1];
     delete db[key];
@@ -213,7 +196,6 @@ function handle(cmd){
 
   log("Unknown command");
 }
-
 </script>
 
 </body>
