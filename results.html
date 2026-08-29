@@ -7,35 +7,22 @@
 <style>
 body{margin:0;font-family:Arial,sans-serif;background:#fff;color:#111}
 header{display:flex;align-items:center;gap:15px;padding:14px 20px;border-bottom:1px solid #ddd;position:sticky;top:0;background:#fff;z-index:2}
-h1{font-size:28px;margin:0}
-.search{flex:1;max-width:700px;padding:12px 16px;border:1px solid #ddd;border-radius:22px}
-button{padding:10px 15px;border:0;border-radius:10px;background:#e6c3d3;cursor:pointer}
-#account{margin-left:auto}
-#searchFrame{display:block;width:calc(100% - 30px);height:calc(100vh - 90px);margin:15px;border:0;border-radius:10px}
-#fallback{display:none;margin:25px;padding:20px;border:1px solid #ddd;border-radius:10px}
+h1{font-size:28px;margin:0}.search{flex:1;max-width:700px;padding:12px 16px;border:1px solid #ddd;border-radius:22px}button{padding:10px 15px;border:0;border-radius:10px;background:#e6c3d3;cursor:pointer}#account{margin-left:auto}
+#results{max-width:900px;margin:20px auto;padding:0 20px}.result{padding:16px 0;border-bottom:1px solid #eee}.result h2{font-size:20px;margin:0 0 5px}.result a{color:#1261a0;text-decoration:none}.result a:hover{text-decoration:underline}.url{font-size:13px;color:#287a35;word-break:break-all}.snippet{margin-top:7px;line-height:1.5;color:#444}.status{text-align:center;padding:40px;color:#666}
 </style>
 </head>
 <body>
-<header>
-<h1>Jref</h1>
-<input id="search" class="search" placeholder="Search with DuckDuckGo..." autocomplete="off">
-<button onclick="search()">Search</button>
-<button id="account" onclick="jerganLogin()">🔐 Jergan</button>
-</header>
-<iframe id="searchFrame" title="DuckDuckGo HTML Search" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
-<div id="fallback"><b>DuckDuckGo could not be embedded in this browser.</b><p><a id="duckLink" target="_blank" rel="noopener noreferrer">Open DuckDuckGo results</a></p></div>
+<header><h1>Jref</h1><input id="search" class="search" placeholder="Search with DuckDuckGo..." autocomplete="off"><button onclick="search()">Search</button><button id="account" onclick="jerganLogin()">🔐 Jergan</button></header>
+<div id="results"><div class="status">Loading DuckDuckGo results...</div></div>
 <script>
 const query=new URLSearchParams(location.search).get('q')||'';
-const searchBox=document.getElementById('search');
-const frame=document.getElementById('searchFrame');
-const fallback=document.getElementById('fallback');
-searchBox.value=query;
-function duckUrl(q){return 'https://html.duckduckgo.com/html/?q='+encodeURIComponent(q)}
-function search(){const q=searchBox.value.trim();if(q)location.href='results.html?q='+encodeURIComponent(q)}
-searchBox.addEventListener('keydown',e=>{if(e.key==='Enter')search()});
-function jerganLogin(){const returnTo=encodeURIComponent('https://jref-theta.vercel.app/home.html');location.href='https://jerganstudio.vercel.app/signin.html?site=jref&return_to='+returnTo}
-if(query){frame.src=duckUrl(query);document.getElementById('duckLink').href=duckUrl(query)}else{frame.style.display='none';fallback.style.display='block';document.getElementById('duckLink').href=duckUrl('')}
-frame.addEventListener('error',()=>{frame.style.display='none';fallback.style.display='block'});
+const box=document.getElementById('search');const results=document.getElementById('results');box.value=query;
+function search(){const q=box.value.trim();if(q)location.href='results.html?q='+encodeURIComponent(q)}
+box.addEventListener('keydown',e=>{if(e.key==='Enter')search()});
+function jerganLogin(){const r=encodeURIComponent('https://jref-theta.vercel.app/home.html');location.href='https://jerganstudio.vercel.app/signin.html?site=jref&return_to='+r}
+function esc(v){const d=document.createElement('div');d.textContent=v||'';return d.innerHTML}
+async function run(){if(!query){results.innerHTML='<div class="status">Enter something to search.</div>';return}try{const r=await fetch('/api/search?q='+encodeURIComponent(query));if(!r.ok)throw new Error('Search failed');const html=await r.text();const doc=new DOMParser().parseFromString(html,'text/html');const links=[...doc.querySelectorAll('a.result__a')];const snippets=[...doc.querySelectorAll('.result__snippet')];const urls=[...doc.querySelectorAll('.result__url')];if(!links.length){results.innerHTML='<div class="status">No results found.</div>';return}results.innerHTML='<p>DuckDuckGo results for <b>'+esc(query)+'</b></p>';links.slice(0,20).forEach((a,i)=>{const href=a.href;const div=document.createElement('div');div.className='result';div.innerHTML='<h2><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(a.textContent.trim())+'</a></h2><div class="url">'+esc(urls[i]?.textContent.trim()||href)+'</div><div class="snippet">'+esc(snippets[i]?.textContent.trim()||'')+'</div>';results.appendChild(div)})}catch(e){results.innerHTML='<div class="status"><b>Jref search is temporarily unavailable.</b><p>Try again in a moment.</p></div>';console.error(e)}}
+run();
 </script>
 </body>
 </html>
