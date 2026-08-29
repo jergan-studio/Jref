@@ -1,28 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Jref Results</title>
 <style>
-body{margin:0;font-family:Arial,sans-serif;background:#fff;color:#111}
-header{display:flex;align-items:center;gap:15px;padding:14px 20px;border-bottom:1px solid #ddd;position:sticky;top:0;background:#fff;z-index:2}
-h1{font-size:28px;margin:0}.search{flex:1;max-width:700px;padding:12px 16px;border:1px solid #ddd;border-radius:22px}button{padding:10px 15px;border:0;border-radius:10px;background:#e6c3d3;cursor:pointer}#account{margin-left:auto}
-#results{max-width:900px;margin:20px auto;padding:0 20px}.result{padding:16px 0;border-bottom:1px solid #eee}.result h2{font-size:20px;margin:0 0 5px}.result a{color:#1261a0;text-decoration:none}.result a:hover{text-decoration:underline}.url{font-size:13px;color:#287a35;word-break:break-all}.snippet{margin-top:7px;line-height:1.5;color:#444}.status{text-align:center;padding:40px;color:#666}
-</style>
-</head>
+body{margin:0;font-family:Arial,sans-serif;background:#fff;color:#111}header{display:flex;align-items:center;gap:15px;padding:14px 20px;border-bottom:1px solid #ddd;position:sticky;top:0;background:#fff;z-index:2}h1{font-size:28px;margin:0}.search{flex:1;max-width:700px;padding:12px 16px;border:1px solid #ddd;border-radius:22px}button{padding:10px 15px;border:0;border-radius:10px;background:#e6c3d3;cursor:pointer}#account{margin-left:auto}#results{max-width:900px;margin:20px auto;padding:0 20px}.result{padding:16px 0;border-bottom:1px solid #eee}.result h2{font-size:20px;margin:0 0 5px}.result a{color:#1261a0;text-decoration:none}.result a:hover{text-decoration:underline}.url{font-size:13px;color:#287a35;word-break:break-all}.snippet{margin-top:7px;line-height:1.5;color:#444}.status{text-align:center;padding:40px;color:#666}.provider{font-size:13px;color:#666;margin-bottom:15px}
+</style></head>
 <body>
-<header><h1>Jref</h1><input id="search" class="search" placeholder="Search with DuckDuckGo..." autocomplete="off"><button onclick="search()">Search</button><button id="account" onclick="jerganLogin()">🔐 Jergan</button></header>
-<div id="results"><div class="status">Loading DuckDuckGo results...</div></div>
+<header><h1>Jref</h1><input id="search" class="search" placeholder="Search with Yandex..." autocomplete="off"><button onclick="search()">Search</button><button id="account" onclick="jerganLogin()">🔐 Jergan</button></header>
+<div id="results"><div class="status">Loading Yandex results...</div></div>
 <script>
-const query=new URLSearchParams(location.search).get('q')||'';
-const box=document.getElementById('search');const results=document.getElementById('results');box.value=query;
-function search(){const q=box.value.trim();if(q)location.href='results.html?q='+encodeURIComponent(q)}
-box.addEventListener('keydown',e=>{if(e.key==='Enter')search()});
-function jerganLogin(){const r=encodeURIComponent('https://jref-theta.vercel.app/home.html');location.href='https://jerganstudio.vercel.app/signin.html?site=jref&return_to='+r}
-function esc(v){const d=document.createElement('div');d.textContent=v||'';return d.innerHTML}
-async function run(){if(!query){results.innerHTML='<div class="status">Enter something to search.</div>';return}try{const r=await fetch('/api/search?q='+encodeURIComponent(query));if(!r.ok)throw new Error('Search failed');const html=await r.text();const doc=new DOMParser().parseFromString(html,'text/html');const links=[...doc.querySelectorAll('a.result__a')];const snippets=[...doc.querySelectorAll('.result__snippet')];const urls=[...doc.querySelectorAll('.result__url')];if(!links.length){results.innerHTML='<div class="status">No results found.</div>';return}results.innerHTML='<p>DuckDuckGo results for <b>'+esc(query)+'</b></p>';links.slice(0,20).forEach((a,i)=>{const href=a.href;const div=document.createElement('div');div.className='result';div.innerHTML='<h2><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(a.textContent.trim())+'</a></h2><div class="url">'+esc(urls[i]?.textContent.trim()||href)+'</div><div class="snippet">'+esc(snippets[i]?.textContent.trim()||'')+'</div>';results.appendChild(div)})}catch(e){results.innerHTML='<div class="status"><b>Jref search is temporarily unavailable.</b><p>Try again in a moment.</p></div>';console.error(e)}}
-run();
-</script>
-</body>
-</html>
+const query=new URLSearchParams(location.search).get('q')||'';const box=document.getElementById('search');const results=document.getElementById('results');box.value=query;
+function search(){const q=box.value.trim();if(q)location.href='results.html?q='+encodeURIComponent(q)}box.addEventListener('keydown',e=>{if(e.key==='Enter')search()});
+function jerganLogin(){const r=encodeURIComponent('https://jref-theta.vercel.app/home.html');location.href='https://jerganstudio.vercel.app/signin.html?site=jref&return_to='+r}function esc(v){const d=document.createElement('div');d.textContent=v||'';return d.innerHTML}
+function absoluteUrl(href){try{return new URL(href,'https://yandex.com').href}catch{return href}}
+async function run(){if(!query){results.innerHTML='<div class="status">Enter something to search.</div>';return}try{const r=await fetch('/api/search?q='+encodeURIComponent(query));if(!r.ok)throw new Error('Search failed: '+r.status);const html=await r.text();const doc=new DOMParser().parseFromString(html,'text/html');
+let items=[...doc.querySelectorAll('li.serp-item')];if(!items.length)items=[...doc.querySelectorAll('.serp-item')];let parsed=items.map(item=>{const a=item.querySelector('a.organic__url,.OrganicTitle-Link,.organic__title-wrapper a');const title=item.querySelector('.OrganicTitleContentSpan,.organic__title-wrapper');const snippet=item.querySelector('.OrganicTextContentSpan,.organic__snippet,.text-container');return{href:a?.href,title:(title?.textContent||a?.textContent||'').trim(),snippet:(snippet?.textContent||'').trim()}}).filter(x=>x.href&&x.title);
+if(!parsed.length){const links=[...doc.querySelectorAll('a[href]')].filter(a=>a.textContent.trim().length>3&&!a.href.includes('yandex.com'));parsed=links.slice(0,20).map(a=>({href:a.href,title:a.textContent.trim(),snippet:''}))}
+if(!parsed.length)throw new Error('No readable Yandex results');results.innerHTML='<div class="provider">Yandex results for <b>'+esc(query)+'</b></div>';parsed.slice(0,20).forEach(item=>{const href=absoluteUrl(item.href);const div=document.createElement('div');div.className='result';div.innerHTML='<h2><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(item.title)+'</a></h2><div class="url">'+esc(href)+'</div><div class="snippet">'+esc(item.snippet)+'</div>';results.appendChild(div)})}catch(e){results.innerHTML='<div class="status"><b>Jref search is temporarily unavailable.</b><p>Yandex may be blocking server requests. Try again in a moment.</p></div>';console.error(e)}}run();
+</script></body></html>
