@@ -2,201 +2,51 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Jref</title>
-
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  text-align:center;
-  background:#fff;
-  color:#000;
-}
-
-h1{
-  margin-top:70px;
-  font-size:60px;
-}
-
-input{
-  width:50%;
-  padding:12px;
-  border:none;
-  border-radius:20px;
-  background:#e6c3d3;
-}
-
-button{
-  margin:5px;
-  padding:10px 15px;
-  border:none;
-  border-radius:10px;
-  background:#e6c3d3;
-  cursor:pointer;
-}
-
-#account{
-  position:absolute;
-  top:20px;
-  right:20px;
-}
-
-#console{
-  display:none;
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  width:700px;
-  height:450px;
-  background:#111;
-  color:lime;
-  font-family:monospace;
-  text-align:left;
-  padding:10px;
-  border-radius:10px;
-  box-sizing:border-box;
-}
-
-#log{
-  height:390px;
-  overflow:auto;
-}
-
-#cmd{
-  width:100%;
-  padding:8px;
-  background:#000;
-  color:lime;
-  border:none;
-  outline:none;
-  box-sizing:border-box;
-}
+body{margin:0;font-family:Arial,sans-serif;text-align:center;background:#fff;color:#111}
+.top{display:flex;justify-content:flex-end;padding:16px 20px}
+#account{padding:10px 16px;border:0;border-radius:20px;background:#e6c3d3;cursor:pointer}
+main{padding:30px 20px}
+h1{margin-top:20px;font-size:60px}
+.searchbar{display:flex;justify-content:center;gap:8px;max-width:800px;margin:auto}
+input{flex:1;padding:14px 18px;border:1px solid #ddd;border-radius:24px;font-size:16px}
+button{padding:10px 15px;border:0;border-radius:10px;background:#e6c3d3;cursor:pointer}
+.shortcuts{margin-top:25px}
+#accountInfo{margin-top:12px;font-size:14px}
+#searchFrame{display:none;width:100%;height:650px;border:1px solid #ddd;border-radius:14px;margin-top:30px}
+.note{font-size:13px;color:#666;margin-top:15px}
 </style>
 </head>
-
 <body>
-
-<button id="account" onclick="jerganLogin()">Login with Jergan</button>
-
+<div class="top"><button id="account" onclick="jerganLogin()">🔐 Login with Jergan</button></div>
+<main>
 <h1>Jref</h1>
-
-<input id="search" placeholder="Search with DuckDuckGo..." autocomplete="off">
-<br><br>
-
+<div id="accountInfo"></div>
+<div class="searchbar">
+<input id="search" placeholder="Search the web with DuckDuckGo..." autocomplete="off">
+<button onclick="duckSearch()">🔍 Search</button>
+</div>
+<div class="shortcuts">
 <button onclick="openShortcut('yt')">YouTube</button>
 <button onclick="openShortcut('gh')">GitHub</button>
 <button onclick="openShortcut('giz')">Gizno AI</button>
-<button onclick="duckSearch()">Search DuckDuckGo</button>
-
-<div id="console">
-<div id="log"></div>
-<input id="cmd" placeholder="list | add name url | del name">
 </div>
-
+<p class="note">Jref search is powered by DuckDuckGo HTML.</p>
+<iframe id="searchFrame" title="DuckDuckGo Search"></iframe>
+</main>
 <script>
-const DB_URL = "https://raw.githubusercontent.com/YOURNAME/YOURREPO/main/jref-db.json";
-let db = {};
-
-async function loadDB(){
-  try{
-    const res = await fetch(DB_URL);
-    db = await res.json();
-  } catch(e){
-    db = {
-      yt:"https://youtube.com",
-      gh:"https://github.com",
-      giz:"https://gizno-ai.vercel.app/"
-    };
-  }
-}
+const DB_URL="https://raw.githubusercontent.com/YOURNAME/YOURREPO/main/jref-db.json";
+let db={yt:"https://youtube.com",gh:"https://github.com",giz:"https://gizno-ai.vercel.app/"};
+async function loadDB(){try{const r=await fetch(DB_URL);if(r.ok)db={...db,...await r.json()}}catch(e){}}
 loadDB();
-
-function getQuery(){
-  return document.getElementById("search").value.trim();
-}
-
-function duckSearch(){
-  const query = getQuery();
-  if(!query) return;
-  location.href = "results.html?q=" + encodeURIComponent(query);
-}
-
-document.getElementById("search").addEventListener("keydown", e=>{
-  if(e.key === "Enter") duckSearch();
-});
-
-function openShortcut(k){
-  if(db[k]) location.href=db[k];
-}
-
-function jerganLogin(){
-  const returnTo = encodeURIComponent("https://jref-theta.vercel.app/home.html");
-  location.href = "https://jerganstudio.vercel.app/signin.html?site=jref&return_to=" + returnTo;
-}
-
-function toggleConsole(){
-  const c=document.getElementById("console");
-  c.style.display = c.style.display==="block" ? "none" : "block";
-}
-
-document.addEventListener("keydown",e=>{
-  if(e.ctrlKey && (e.key==="`" || e.key==="~")){
-    e.preventDefault();
-    toggleConsole();
-  }
-});
-
-function log(msg){
-  const l=document.getElementById("log");
-  l.innerHTML += "> " + msg + "<br>";
-  l.scrollTop=l.scrollHeight;
-}
-
-document.getElementById("cmd").addEventListener("keydown",e=>{
-  if(e.key==="Enter"){
-    handle(e.target.value.trim());
-    e.target.value="";
-  }
-});
-
-function handle(cmd){
-  log(cmd);
-
-  if(cmd==="list"){
-    Object.keys(db).forEach(k=>log(k+" → "+db[k]));
-    return;
-  }
-
-  if(cmd.startsWith("add ")){
-    const parts=cmd.split(" ");
-    const key=parts[1];
-    const url=parts.slice(2).join(" ");
-    let t=10;
-    log("Adding "+key+" in cloud...");
-    const timer=setInterval(()=>{
-      log("⏳ "+t+"s");
-      t--;
-      if(t<0){
-        clearInterval(timer);
-        db[key]=url;
-        log("⚠ Added locally (not cloud yet)");
-        log("To truly save globally, use Firebase or API backend");
-      }
-    },1000);
-    return;
-  }
-
-  if(cmd.startsWith("del ")){
-    const key=cmd.split(" ")[1];
-    delete db[key];
-    log("Deleted locally: "+key);
-    return;
-  }
-
-  log("Unknown command");
-}
+function duckSearch(){const q=document.getElementById('search').value.trim();if(!q)return;location.href='results.html?q='+encodeURIComponent(q)}
+document.getElementById('search').addEventListener('keydown',e=>{if(e.key==='Enter')duckSearch()});
+function openShortcut(k){if(db[k])location.href=db[k]}
+function jerganLogin(){const returnTo=encodeURIComponent('https://jref-theta.vercel.app/home.html');location.href='https://jerganstudio.vercel.app/signin.html?site=jref&return_to='+returnTo}
+function showAccount(){try{const token=localStorage.getItem('jergan_token');if(token){document.getElementById('account').textContent='👤 Jergan Account';document.getElementById('accountInfo').textContent='Signed in with Jergan';}}catch(e){}}
+showAccount();
 </script>
-
 </body>
 </html>
