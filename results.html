@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>Jref Results</title>
 
 <style>
@@ -9,10 +10,34 @@ body{
   padding:20px;
 }
 
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+}
+
+.search{
+  flex:1;
+  max-width:650px;
+  padding:12px 16px;
+  border:none;
+  border-radius:20px;
+  background:#e6c3d3;
+}
+
+button{
+  padding:10px 15px;
+  border:none;
+  border-radius:10px;
+  background:#e6c3d3;
+  cursor:pointer;
+}
+
 .result{
   border:1px solid #ddd;
   border-radius:10px;
-  padding:10px;
+  padding:14px;
   margin:10px 0;
 }
 
@@ -21,115 +46,112 @@ a{
   text-decoration:none;
 }
 
-a:hover{
-  text-decoration:underline;
+a:hover{text-decoration:underline;}
+
+.url{
+  color:#087f23;
+  font-size:14px;
+  word-break:break-all;
 }
 </style>
 </head>
 
 <body>
 
-<h1>Results</h1>
+<header>
+  <h1>Jref</h1>
+  <button onclick="jerganLogin()">Login with Jergan</button>
+</header>
+
+<input id="search" class="search" placeholder="Search with DuckDuckGo..." autocomplete="off">
+<button onclick="search()">Search</button>
 
 <div id="results"></div>
 
 <script>
+const query = new URLSearchParams(location.search).get("q") || "";
+const container = document.getElementById("results");
+const searchBox = document.getElementById("search");
+searchBox.value = query;
 
-const query =
-(
-  new URLSearchParams(location.search)
-).get("q") || "";
-
-const db =
-JSON.parse(
-  localStorage.getItem("jref_db") || "{}"
-);
-
-const container =
-document.getElementById("results");
-
-container.innerHTML =
-`<p>Searching for: <b>${query}</b></p>`;
-
-/* SIMPLE SIMILARITY */
-
-function similarity(a,b){
-
-  a = a.toLowerCase();
-  b = b.toLowerCase();
-
-  let score = 0;
-
-  if(a.includes(b)) score += 5;
-  if(b.includes(a)) score += 5;
-
-  for(const ch of b){
-
-    if(a.includes(ch)){
-      score++;
-    }
-
-  }
-
-  return score;
+function jerganLogin(){
+  const returnTo = encodeURIComponent("https://jref-theta.vercel.app/home.html");
+  location.href = "https://jerganstudio.vercel.app/signin.html?site=jref&return_to=" + returnTo;
 }
 
-const matches = [];
-
-for(const key in db){
-
-  const score =
-    similarity(key, query);
-
-  if(score > 0){
-
-    matches.push({
-      key,
-      url: db[key],
-      score
-    });
-
-  }
-
+function search(){
+  const q = searchBox.value.trim();
+  if(q) location.href = "results.html?q=" + encodeURIComponent(q);
 }
 
-matches.sort(
-  (a,b) => b.score - a.score
-);
+searchBox.addEventListener("keydown", e=>{
+  if(e.key === "Enter") search();
+});
 
-if(matches.length){
+async function runSearch(){
+  if(!query){
+    container.innerHTML = "<p>Enter something to search.</p>";
+    return;
+  }
 
-  matches.forEach(item => {
+  container.innerHTML = `<p>Searching DuckDuckGo for: <b>${escapeHtml(query)}</b>...</p>`;
 
-    const div =
-      document.createElement("div");
+  /* DuckDuckGo's HTML results page is the search provider. */
+  const duckUrl = "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(query);
 
-    div.className = "result";
+  try{
+    const res = await fetch(duckUrl, {mode:"cors"});
+    if(!res.ok) throw new Error("DuckDuckGo request failed");
+    const html = await res.text();
+    renderDuckDuckGo(html);
+  }catch(error){
+    /* Browsers may block direct cross-origin scraping. Open the real
+       DuckDuckGo results page instead of pretending the search succeeded. */
+    container.innerHTML = `
+      <div class="result">
+        <h3>DuckDuckGo</h3>
+        <p>Open the DuckDuckGo results for this search.</p>
+        <a href="${duckUrl}" target="_blank" rel="noopener noreferrer">Search DuckDuckGo</a>
+      </div>`;
+  }
+}
 
-    div.innerHTML = `
-      <h3>${item.key}</h3>
-      <p>Match Score: ${item.score}</p>
-      <a href="${item.url}">
-        Open
-      </a>
-    `;
+function renderDuckDuckGo(html){
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const links = [...doc.querySelectorAll("a.result__a")];
 
-    container.appendChild(div);
+  container.innerHTML = `<p>DuckDuckGo results for: <b>${escapeHtml(query)}</b></p>`;
 
+  if(!links.length){
+    container.innerHTML += `
+      <div class="result">
+        <h3>No results displayed</h3>
+        <a href="https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}" target="_blank" rel="noopener noreferrer">Open DuckDuckGo results</a>
+      </div>`;
+    return;
+  }
+
+  links.slice(0,20).forEach(link=>{
+    const result = document.createElement("div");
+    result.className = "result";
+    const href = link.href;
+    result.innerHTML = `
+      <h3><a href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.textContent.trim())}</a></h3>
+      <div class="url">${escapeHtml(href)}</div>`;
+    container.appendChild(result);
   });
-
-}else{
-
-  container.innerHTML += `
-    <div class="result">
-      <h3>No database results found</h3>
-      <a href="https://www.google.com/search?q=${encodeURIComponent(query)}">
-        Search Google
-      </a>
-    </div>
-  `;
 }
 
+function escapeHtml(value){
+  return String(value).replace(/[&<>\"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[ch]));
+}
+
+function escapeAttribute(value){
+  return escapeHtml(value).replace(/'/g,"&#39;");
+}
+
+runSearch();
 </script>
 
 </body>
